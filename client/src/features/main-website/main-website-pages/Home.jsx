@@ -21,7 +21,6 @@ import {
   Bell,
   UserRound,
   Layers3,
-  Clock3,
   X,
 } from "lucide-react";
 
@@ -1029,4 +1028,3 @@ export default function Home() {
       </section>
     </main>
   );
-}

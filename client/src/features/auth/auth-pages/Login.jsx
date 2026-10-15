@@ -11,6 +11,7 @@ export default function Login() {
     email: "",
     password: "",
   });
+
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -167,6 +168,15 @@ export default function Login() {
               {error}
             </div>
           )}
+
+          <div className="text-right">
+            <Link
+              to="/forgot-password"
+              className="text-sm font-semibold text-blue-600 hover:text-blue-800"
+            >
+              Forgot password?
+            </Link>
+          </div>
 
           <button
             type="submit"

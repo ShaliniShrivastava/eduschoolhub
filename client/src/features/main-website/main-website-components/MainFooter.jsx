@@ -37,7 +37,11 @@ export default function MainFooter() {
         <div>
           <h3 className="font-bold text-white">Platform</h3>
           <ul className="mt-4 space-y-3 text-sm">
-            <li><Link to="/super-admin/login" className="hover:text-blue-400">Super Admin Login</Link></li>
+            <li>
+              <Link to="/super-admin/login" className="hover:text-blue-400">
+                Super Admin Login
+              </Link>
+            </li>
             <li><a href="/#contact" className="hover:text-blue-400">Book a Demo</a></li>
             <li><a href="/#features" className="hover:text-blue-400">School Management</a></li>
             <li><a href="/#pricing" className="hover:text-blue-400">Subscription Plans</a></li>
