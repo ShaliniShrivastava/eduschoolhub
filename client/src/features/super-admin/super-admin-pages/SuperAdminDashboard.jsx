@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { logoutGoogleSuperAdmin } from "../../../services/authService";
-
+import authService from "../../auth/auth-services/authService";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 export default function SuperAdminDashboard() {
@@ -58,19 +57,21 @@ export default function SuperAdminDashboard() {
     verifySession();
   }, [verifySession]);
 
- const handleLogout = async () => {
-  setLoggingOut(true);
-  setError("");
+ 
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    setError("");
 
-  try {
-    await logoutGoogleSuperAdmin();
-    navigate("/super-admin/login", { replace: true });
-  } catch (err) {
-    setError(err.message || "Logout failed. Please try again.");
-  } finally {
-    setLoggingOut(false);
-  }
-};
+    try {
+      await authService.logout();
+      navigate("/super-admin/login", { replace: true });
+    } catch (err) {
+      setError(err.message || "Logout failed. Please try again.");
+    } finally {
+      setLoggingOut(false);
+    }
+  };
+
 
   if (status === "checking") {
     return (

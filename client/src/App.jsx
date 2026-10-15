@@ -11,7 +11,7 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 // Authentication context and route protection
 import { AuthProvider } from "./app-context/AuthContext";
 import ProtectedRoute from "./app-routes/ProtectedRoute";
-import RoleRoute from "./app-routes/RoleRoute";
+import RoleRoute from "./app-routes/RoleRoutes.jsx";
 
 // Public website
 import Home from "./features/main-website/main-website-pages/Home.jsx";
@@ -25,9 +25,8 @@ import ForgotPassword from "./features/auth/auth-pages/ForgotPassword.jsx";
 import ResetPassword from "./features/auth/auth-pages/ResetPassword.jsx";
 
 // Super Admin pages
-import SuperAdminLogin from "./pages/SuperAdminLogin.jsx";
-import SuperAdminDashboard from "./pages/super-admin/SuperAdminDashboard.jsx";
-
+import SuperAdminLogin from "./features/super-admin/super-admin-pages/SuperAdminLogin.jsx";
+import SuperAdminDashboard from "./features/super-admin/super-admin-pages/SuperAdminDashboard.jsx";
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 function NotFound() {
