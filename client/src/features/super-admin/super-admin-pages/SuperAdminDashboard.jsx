@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { logoutGoogleSuperAdmin } from "../../services/authService";
+import { logoutGoogleSuperAdmin } from "../../../services/authService";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 

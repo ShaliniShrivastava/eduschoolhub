@@ -3,157 +3,117 @@ require("dotenv").config();
 
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
-const { OAuth2Client } = require("google-auth-library");
 const User = require("../models/User");
-
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 function getRequiredEnv(name) {
   const value = process.env[name]?.trim();
 
   if (!value) {
-    throw new Error(`${name} is missing from .env`);
+    throw new Error(`${name} is missing from server/.env`);
   }
 
   return value;
 }
 
-async function verifyGoogleToken(idToken, authorizedEmail) {
-  if (!idToken || typeof idToken !== "string") {
-    throw new Error("A valid Google ID token is required for linking.");
+function validatePassword(password) {
+  const errors = [];
+
+  if (password.length < 8) {
+    errors.push("at least 8 characters");
   }
 
-  const clientId = getRequiredEnv("GOOGLE_CLIENT_ID");
-
-  const ticket = await googleClient.verifyIdToken({
-    idToken,
-    audience: clientId,
-  });
-
-  const payload = ticket.getPayload();
-
-  if (
-    !payload?.sub ||
-    !payload.email ||
-    payload.email_verified !== true
-  ) {
-    throw new Error("Google account is not verified.");
+  if (!/[A-Z]/.test(password)) {
+    errors.push("at least one uppercase letter (A-Z)");
   }
 
-  const googleEmail = payload.email.trim().toLowerCase();
+  if (!/[a-z]/.test(password)) {
+    errors.push("at least one lowercase letter (a-z)");
+  }
 
-  if (googleEmail !== authorizedEmail) {
+  if (!/[0-9]/.test(password)) {
+    errors.push("at least one number (0-9)");
+  }
+
+  if (!/[^A-Za-z0-9]/.test(password)) {
+    errors.push("at least one special character");
+  }
+
+  if (errors.length > 0) {
     throw new Error(
-      "Google email does not match SUPER_ADMIN_EMAIL."
+      `SUPER_ADMIN_PASSWORD must contain ${errors.join(", ")}.`
     );
   }
-
-  return {
-    googleId: payload.sub,
-    email: googleEmail,
-  };
 }
 
 async function createSuperAdmin() {
-  let exitCode = 0;
-
   try {
     const mongoUri = getRequiredEnv("MONGO_URI");
     const email = getRequiredEnv("SUPER_ADMIN_EMAIL").toLowerCase();
+    const password = getRequiredEnv("SUPER_ADMIN_PASSWORD");
     const name =
       process.env.SUPER_ADMIN_NAME?.trim() ||
       "EduSchoolHub Super Admin";
 
+    const allowMultiple = process.argv.includes("--allow-multiple");
+
+    // Validate password before connecting to the database.
+    validatePassword(password);
+
     await mongoose.connect(mongoUri);
     console.log("MongoDB connected.");
 
-    let admin = await User.findOne({ email });
+    // Prevent duplicate accounts for the same email.
+    const existingUser = await User.findOne({ email });
 
-    if (admin && admin.role !== "superAdmin") {
-      throw new Error(
-        "This email belongs to a non-Super Admin account. No changes made."
-      );
-    }
-
-    if (!admin) {
-      const password = process.env.SUPER_ADMIN_PASSWORD;
-
-      if (!password || password.length < 12) {
+    if (existingUser) {
+      if (existingUser.role !== "superAdmin") {
         throw new Error(
-          "To create a new Super Admin, set SUPER_ADMIN_PASSWORD " +
-          "to a password of at least 12 characters."
+          "This email belongs to another role. No changes made."
         );
       }
 
-      const hashedPassword = await bcrypt.hash(password, 12);
-
-      admin = await User.create({
-        name,
-        email,
-        password: hashedPassword,
-        role: "superAdmin",
-        schoolId: null,
-        isActive: true,
-      });
-
-      console.log("Super Admin created successfully.");
-    } else {
-      console.log("Existing Super Admin found.");
-    }
-
-    // Google linking is optional. Without a token, no linking occurs.
-    const googleIdToken = process.env.GOOGLE_LINK_ID_TOKEN;
-
-    if (googleIdToken) {
-      if (admin.isActive !== true) {
-        throw new Error(
-          "The Super Admin account is disabled. Google linking refused."
-        );
-      }
-
-      const identity = await verifyGoogleToken(
-        googleIdToken,
-        email
-      );
-
-      if (admin.googleId && admin.googleId !== identity.googleId) {
-        throw new Error(
-          "This Super Admin is already linked to another Google account."
-        );
-      }
-
-      const anotherUser = await User.findOne({
-        googleId: identity.googleId,
-        _id: { $ne: admin._id },
-      });
-
-      if (anotherUser) {
-        throw new Error(
-          "This Google account is already linked to another user."
-        );
-      }
-
-      if (admin.googleId !== identity.googleId) {
-        admin.googleId = identity.googleId;
-        await admin.save();
-        console.log("Google account linked successfully.");
-      } else {
-        console.log("This Google account is already linked.");
-      }
-    } else {
       console.log(
-        "No Google linking token provided; linking was skipped."
+        "This Super Admin already exists. No duplicate created."
+      );
+      return;
+    }
+
+    // Count existing Super Admin accounts.
+    const superAdminCount = await User.countDocuments({
+      role: "superAdmin",
+    });
+
+    // Allow only one Super Admin unless explicitly overridden.
+    if (superAdminCount >= 1 && !allowMultiple) {
+      throw new Error(
+        "A Super Admin already exists. To create another one, " +
+          "rerun with the --allow-multiple flag."
       );
     }
+
+    // Hash password before saving it.
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    await User.create({
+  name,
+  email,
+  password: hashedPassword,
+  googleId: null,
+  role: "superAdmin",
+  schoolId: null,
+  isActive: true,
+});
+
+    console.log("Super Admin created successfully.");
+    console.log(`Email: ${email}`);
+    console.log(`Total Super Admins: ${superAdminCount + 1}`);
   } catch (error) {
-    exitCode = 1;
     console.error("Super Admin setup failed:", error.message);
+    process.exitCode = 1;
   } finally {
     if (mongoose.connection.readyState !== 0) {
-      await mongoose.connection.close();
+      await mongoose.disconnect();
     }
-
-    process.exitCode = exitCode;
   }
 }
 

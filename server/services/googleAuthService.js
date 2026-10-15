@@ -34,7 +34,7 @@ async function verifyGoogleIdToken(idToken) {
 
     if (
       !payload?.sub ||
-      !payload.email ||
+      !payload?.email ||
       payload.email_verified !== true
     ) {
       throw new Error("UNVERIFIED_GOOGLE_ACCOUNT");
@@ -43,7 +43,7 @@ async function verifyGoogleIdToken(idToken) {
     return {
       googleId: payload.sub,
       email: payload.email.trim().toLowerCase(),
-      name: payload.name || "",
+      name: payload.name?.trim() || "",
       emailVerified: true,
     };
   } catch (error) {
@@ -54,7 +54,11 @@ async function verifyGoogleIdToken(idToken) {
       throw error;
     }
 
-    // Do not expose Google's internal verification errors to clients.
+    // Keep internal Google verification errors private.
+    if (error.message === "GOOGLE_CLIENT_ID is not configured.") {
+      throw error;
+    }
+
     throw new Error("INVALID_GOOGLE_TOKEN");
   }
 }

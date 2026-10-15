@@ -1,19 +1,21 @@
-
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
-const { sendEmail } = require("../utils/email");
+const { sendEmail } = require("../services/emailService");
+
 const {
   issueAccessCookie,
   clearAccessCookie,
 } = require("../services/sessionService");
+
+const { verifyGoogleIdToken } = require("../services/googleAuthService");
 
 const MAX_ATTEMPTS = 5;
 const LOCK_TIME = 15 * 60 * 1000;
 const OTP_EXPIRY = 10 * 60 * 1000;
 const OTP_MAX_ATTEMPTS = 5;
 
-// Public user data — never return password or OTP hashes.
+// Never return passwords, Google IDs, or security hashes.
 function publicUser(user) {
   return {
     id: user._id,
@@ -27,9 +29,7 @@ function publicUser(user) {
 }
 
 function isAccountLocked(user) {
-  return Boolean(
-    user.lockUntil && user.lockUntil.getTime() > Date.now()
-  );
+  return Boolean(user.lockUntil && user.lockUntil.getTime() > Date.now());
 }
 
 function clearExpiredLock(user) {
@@ -37,6 +37,18 @@ function clearExpiredLock(user) {
     user.failedLoginAttempts = 0;
     user.lockUntil = null;
   }
+}
+
+function validatePassword(password) {
+  const errors = [];
+
+  if (password.length < 8) errors.push("at least 8 characters");
+  if (!/[A-Z]/.test(password)) errors.push("an uppercase letter");
+  if (!/[a-z]/.test(password)) errors.push("a lowercase letter");
+  if (!/[0-9]/.test(password)) errors.push("a number");
+  if (!/[^A-Za-z0-9]/.test(password)) errors.push("a special character");
+
+  return errors;
 }
 
 async function verifyPassword(user, password) {
@@ -62,10 +74,7 @@ async function verifyPassword(user, password) {
     return {
       locked: isAccountLocked(user),
       valid: false,
-      attemptsRemaining: Math.max(
-        0,
-        MAX_ATTEMPTS - user.failedLoginAttempts
-      ),
+      attemptsRemaining: Math.max(0, MAX_ATTEMPTS - user.failedLoginAttempts),
     };
   }
 
@@ -83,7 +92,26 @@ function sendInvalidCredentials(res) {
   });
 }
 
-// REGISTER SCHOOL ADMIN
+function handleGoogleError(res, error) {
+  if (
+    error.message === "INVALID_GOOGLE_TOKEN" ||
+    error.message === "UNVERIFIED_GOOGLE_ACCOUNT"
+  ) {
+    return res.status(401).json({
+      success: false,
+      message: "Google authentication failed.",
+    });
+  }
+
+  console.error("Google authentication error:", error.message);
+
+  return res.status(500).json({
+    success: false,
+    message: "Unable to complete Google authentication.",
+  });
+}
+
+// Register a School Admin with email and password.
 const register = async (req, res) => {
   try {
     const { name, email, password } = req.body || {};
@@ -93,32 +121,29 @@ const register = async (req, res) => {
       typeof email !== "string" ||
       typeof password !== "string" ||
       !name.trim() ||
-      !email.trim() ||
-      !password
+      !email.trim()
     ) {
       return res.status(400).json({
         success: false,
-        message: "Name, email and password are required",
+        message: "Name, email and password are required.",
       });
     }
 
-    if (password.length < 8) {
+    const passwordErrors = validatePassword(password);
+
+    if (passwordErrors.length) {
       return res.status(400).json({
         success: false,
-        message: "Password must be at least 8 characters",
+        message: `Password must contain ${passwordErrors.join(", ")}.`,
       });
     }
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    const existingUser = await User.findOne({
-      email: normalizedEmail,
-    });
-
-    if (existingUser) {
+    if (await User.findOne({ email: normalizedEmail })) {
       return res.status(409).json({
         success: false,
-        message: "User already exists with this email",
+        message: "User already exists with this email.",
       });
     }
 
@@ -133,14 +158,14 @@ const register = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: "School Admin registered successfully",
+      message: "School Admin registered successfully.",
       user: publicUser(user),
     });
   } catch (error) {
     if (error.code === 11000) {
       return res.status(409).json({
         success: false,
-        message: "Email already registered",
+        message: "Email or Google account already registered.",
       });
     }
 
@@ -148,12 +173,12 @@ const register = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Internal server error",
+      message: "Internal server error.",
     });
   }
 };
 
-// GENERAL LOGIN
+// General email/password login.
 const login = async (req, res) => {
   try {
     const { email, password, rememberMe } = req.body || {};
@@ -166,7 +191,7 @@ const login = async (req, res) => {
     ) {
       return res.status(400).json({
         success: false,
-        message: "Email and password are required",
+        message: "Email and password are required.",
       });
     }
 
@@ -181,7 +206,7 @@ const login = async (req, res) => {
     if (!user.isActive) {
       return res.status(403).json({
         success: false,
-        message: "Account is inactive",
+        message: "Account is inactive.",
       });
     }
 
@@ -197,18 +222,16 @@ const login = async (req, res) => {
     if (!verification.valid) {
       return res.status(401).json({
         success: false,
-        message: "Invalid email or password",
+        message: "Invalid email or password.",
         attemptsRemaining: verification.attemptsRemaining,
       });
     }
 
-    const remember = rememberMe === true;
-
-    issueAccessCookie(res, user, remember);
+    issueAccessCookie(res, user, rememberMe === true);
 
     return res.status(200).json({
       success: true,
-      message: "Login successful",
+      message: "Login successful.",
       user: publicUser(user),
     });
   } catch (error) {
@@ -216,12 +239,12 @@ const login = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Internal server error",
+      message: "Internal server error.",
     });
   }
 };
 
-// SUPER ADMIN PASSWORD LOGIN
+// Super Admin email/password login.
 const superAdminLogin = async (req, res) => {
   try {
     const { email, password, rememberMe } = req.body || {};
@@ -234,7 +257,7 @@ const superAdminLogin = async (req, res) => {
     ) {
       return res.status(400).json({
         success: false,
-        message: "Email and password are required",
+        message: "Email and password are required.",
       });
     }
 
@@ -250,7 +273,7 @@ const superAdminLogin = async (req, res) => {
     if (!user.isActive) {
       return res.status(403).json({
         success: false,
-        message: "Account is inactive",
+        message: "Account is inactive.",
       });
     }
 
@@ -266,18 +289,16 @@ const superAdminLogin = async (req, res) => {
     if (!verification.valid) {
       return res.status(401).json({
         success: false,
-        message: "Invalid email or password",
+        message: "Invalid email or password.",
         attemptsRemaining: verification.attemptsRemaining,
       });
     }
 
-    const remember = rememberMe === true;
-
-    issueAccessCookie(res, user, remember);
+    issueAccessCookie(res, user, rememberMe === true);
 
     return res.status(200).json({
       success: true,
-      message: "Super Admin login successful",
+      message: "Super Admin login successful.",
       user: publicUser(user),
     });
   } catch (error) {
@@ -285,12 +306,192 @@ const superAdminLogin = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Internal server error",
+      message: "Internal server error.",
     });
   }
 };
 
-// FORGOT PASSWORD — SEND OTP
+// Google registration: public registration creates School Admin only.
+// Never accept a role from the request body.
+const googleRegister = async (req, res) => {
+  try {
+    const { credential } = req.body || {};
+
+    const identity = await verifyGoogleIdToken(credential);
+
+    const existingGoogleUser = await User.findOne({
+      googleId: identity.googleId,
+    });
+
+    if (existingGoogleUser) {
+      return res.status(409).json({
+        success: false,
+        message: "This Google account is already registered. Please log in.",
+        code: "GOOGLE_ACCOUNT_EXISTS",
+      });
+    }
+
+    const existingEmail = await User.findOne({
+      email: identity.email,
+    });
+
+    if (existingEmail) {
+      return res.status(409).json({
+        success: false,
+        message:
+          "An account already exists with this email. Log in using your existing method and securely link Google.",
+        code: "GOOGLE_LINK_REQUIRED",
+      });
+    }
+
+    const user = await User.create({
+      name: identity.name || identity.email.split("@")[0],
+      email: identity.email,
+      googleId: identity.googleId,
+      role: "schoolAdmin",
+      password: undefined,
+      schoolId: null,
+      isActive: true,
+    });
+
+    issueAccessCookie(res, user);
+
+    return res.status(201).json({
+      success: true,
+      message: "School Admin registered successfully with Google.",
+      user: publicUser(user),
+    });
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: "This email or Google account is already registered.",
+      });
+    }
+
+    return handleGoogleError(res, error);
+  }
+};
+
+// Google login: only an already-linked account can log in.
+const googleLogin = async (req, res) => {
+  try {
+    const { credential } = req.body || {};
+
+    const identity = await verifyGoogleIdToken(credential);
+
+    const user = await User.findOne({
+      googleId: identity.googleId,
+    });
+
+    if (!user) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "No linked EduSchoolHub account was found. Register or securely link your existing account.",
+        code: "GOOGLE_ACCOUNT_NOT_LINKED",
+      });
+    }
+
+    if (user.email !== identity.email) {
+      return res.status(403).json({
+        success: false,
+        message: "Google account details do not match the linked account.",
+      });
+    }
+
+    if (!user.isActive) {
+      return res.status(403).json({
+        success: false,
+        message: "Account is inactive.",
+      });
+    }
+
+    issueAccessCookie(res, user);
+
+    return res.status(200).json({
+      success: true,
+      message: "Google login successful.",
+      user: publicUser(user),
+    });
+  } catch (error) {
+    return handleGoogleError(res, error);
+  }
+};
+
+// Link Google to the currently authenticated user's account.
+// The route MUST use authMiddleware.
+const linkGoogleAccount = async (req, res) => {
+  try {
+    if (!req.user?._id) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required.",
+      });
+    }
+
+    const { credential } = req.body || {};
+    const identity = await verifyGoogleIdToken(credential);
+
+    const user = await User.findById(req.user._id);
+
+    if (!user || !user.isActive) {
+      return res.status(403).json({
+        success: false,
+        message: "Account is unavailable.",
+      });
+    }
+
+    // Require the signed-in account and Google identity to match.
+    if (user.email !== identity.email) {
+      return res.status(403).json({
+        success: false,
+        message: "The verified Google email must match your account email.",
+      });
+    }
+
+    if (user.googleId && user.googleId !== identity.googleId) {
+      return res.status(409).json({
+        success: false,
+        message: "A different Google account is already linked.",
+      });
+    }
+
+    const linkedUser = await User.findOne({
+      googleId: identity.googleId,
+      _id: { $ne: user._id },
+    });
+
+    if (linkedUser) {
+      return res.status(409).json({
+        success: false,
+        message: "This Google account is already linked to another user.",
+      });
+    }
+
+    if (!user.googleId) {
+      user.googleId = identity.googleId;
+      await user.save();
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Google account linked successfully.",
+      user: publicUser(user),
+    });
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: "This Google account is already linked.",
+      });
+    }
+
+    return handleGoogleError(res, error);
+  }
+};
+
+// Forgot password: send OTP.
 const forgotPassword = async (req, res) => {
   try {
     const email =
@@ -301,7 +502,7 @@ const forgotPassword = async (req, res) => {
     if (!email) {
       return res.status(400).json({
         success: false,
-        message: "Email is required",
+        message: "Email is required.",
       });
     }
 
@@ -311,7 +512,7 @@ const forgotPassword = async (req, res) => {
     };
 
     const user = await User.findOne({ email }).select(
-      "+otpHash +otpExpiry +otpAttempts"
+      "+otpHash +otpExpiry +otpAttempts",
     );
 
     if (!user) {
@@ -320,11 +521,7 @@ const forgotPassword = async (req, res) => {
 
     const otp = crypto.randomInt(100000, 1000000).toString();
 
-    user.otpHash = crypto
-      .createHash("sha256")
-      .update(otp)
-      .digest("hex");
-
+    user.otpHash = crypto.createHash("sha256").update(otp).digest("hex");
     user.otpExpiry = new Date(Date.now() + OTP_EXPIRY);
     user.otpAttempts = 0;
 
@@ -341,7 +538,6 @@ const forgotPassword = async (req, res) => {
       user.otpExpiry = undefined;
       user.otpAttempts = 0;
       await user.save();
-
       throw emailError;
     }
 
@@ -351,12 +547,12 @@ const forgotPassword = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Unable to process request",
+      message: "Unable to process request.",
     });
   }
 };
 
-// RESET PASSWORD — VERIFY OTP
+// Reset password: verify OTP.
 const resetPassword = async (req, res) => {
   try {
     const { email, otp, newPassword } = req.body || {};
@@ -371,21 +567,23 @@ const resetPassword = async (req, res) => {
     ) {
       return res.status(400).json({
         success: false,
-        message: "Email, OTP and new password are required",
+        message: "Email, OTP and new password are required.",
       });
     }
 
     if (!/^\d{6}$/.test(otp)) {
       return res.status(400).json({
         success: false,
-        message: "Invalid or expired OTP",
+        message: "Invalid or expired OTP.",
       });
     }
 
-    if (newPassword.length < 8) {
+    const passwordErrors = validatePassword(newPassword);
+
+    if (passwordErrors.length) {
       return res.status(400).json({
         success: false,
-        message: "Password must be at least 8 characters",
+        message: `Password must contain ${passwordErrors.join(", ")}.`,
       });
     }
 
@@ -396,7 +594,7 @@ const resetPassword = async (req, res) => {
     if (!user || !user.otpHash || !user.otpExpiry) {
       return res.status(400).json({
         success: false,
-        message: "Invalid or expired OTP",
+        message: "Invalid or expired OTP.",
       });
     }
 
@@ -419,10 +617,7 @@ const resetPassword = async (req, res) => {
       });
     }
 
-    const submittedHash = crypto
-      .createHash("sha256")
-      .update(otp)
-      .digest();
+    const submittedHash = crypto.createHash("sha256").update(otp).digest();
 
     const storedHash = Buffer.from(user.otpHash, "hex");
 
@@ -436,11 +631,8 @@ const resetPassword = async (req, res) => {
 
       return res.status(400).json({
         success: false,
-        message: "Invalid or expired OTP",
-        attemptsRemaining: Math.max(
-          0,
-          OTP_MAX_ATTEMPTS - user.otpAttempts
-        ),
+        message: "Invalid or expired OTP.",
+        attemptsRemaining: Math.max(0, OTP_MAX_ATTEMPTS - user.otpAttempts),
       });
     }
 
@@ -455,25 +647,41 @@ const resetPassword = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Password reset successful",
+      message: "Password reset successful.",
     });
   } catch (error) {
     console.error("Reset password error:", error.message);
 
     return res.status(500).json({
       success: false,
-      message: "Unable to reset password",
+      message: "Unable to reset password.",
     });
   }
 };
 
-// LOGOUT
+/* Get the currently authenticated user's session */
+const getCurrentUser = async (req, res) => {
+  if (!req.user || req.user.isActive !== true) {
+    return res.status(401).json({
+      success: false,
+      message: "Authentication required.",
+      code: "NOT_AUTHENTICATED",
+    });
+  }
+
+  return res.status(200).json({
+    success: true,
+    user: publicUser(req.user),
+  });
+};
+
+// Logout.
 const logout = async (req, res) => {
   clearAccessCookie(res);
 
   return res.status(200).json({
     success: true,
-    message: "Logout successful",
+    message: "Logout successful.",
   });
 };
 
@@ -481,6 +689,10 @@ module.exports = {
   register,
   login,
   superAdminLogin,
+  googleRegister,
+  googleLogin,
+  linkGoogleAccount,
+  getCurrentUser,
   logout,
   forgotPassword,
   resetPassword,

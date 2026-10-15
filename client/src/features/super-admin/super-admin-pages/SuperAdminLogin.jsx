@@ -1,11 +1,9 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import GoogleLoginButton from "../components/auth/GoogleLoginButton";
-import {loginWithGoogle} from "../services/authService";
+import GoogleLoginButton from "../../../common-components/shared-components/GoogleLoginButton";
+import authService from "../../auth/auth-services/authService";
 
-const API_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 export default function SuperAdminLogin() {
   const navigate = useNavigate();
@@ -45,27 +43,24 @@ export default function SuperAdminLogin() {
     try {
       setLoading(true);
 
-      const response = await fetch(
-        `${API_URL}/auth/super-admin/login`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify({
-            email,
-            password,
-            rememberMe,
-          }),
-        }
-      );
+      const response = await fetch(`${API_URL}/auth/super-admin/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          email,
+          password,
+          rememberMe,
+        }),
+      });
 
       const result = await response.json();
 
       if (!response.ok) {
         throw new Error(
-          result.message || "Unable to sign in. Please try again."
+          result.message || "Unable to sign in. Please try again.",
         );
       }
 
@@ -75,52 +70,57 @@ export default function SuperAdminLogin() {
 
       navigate("/super-admin/dashboard", { replace: true });
     } catch (err) {
-      setError(err.message || "Unable to connect to the server.");
+      setError(
+        err.response?.data?.message ||
+          err.message ||
+          "Unable to connect to the server.",
+      );
     } finally {
       setLoading(false);
     }
   };
 
   const handleGoogleCredential = async (credential) => {
-  setError("");
+    setError("");
 
-  try {
-    setGoogleLoading(true);
+    try {
+      setGoogleLoading(true);
 
-    const result = await loginWithGoogle(credential);
+      const result = await authService.googleSuperAdminLogin(credential);
 
-    if (result.user?.role !== "superAdmin") {
-      throw new Error("Super Admin access is required.");
+      if (result.user?.role !== "superAdmin") {
+        throw new Error("Super Admin access is required.");
+      }
+
+      navigate("/super-admin/dashboard", { replace: true });
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          err.message ||
+          "Google sign-in failed. Please try again.",
+      );
+    } finally {
+      setGoogleLoading(false);
     }
-
-    navigate("/super-admin/dashboard", { replace: true });
-  } catch (err) {
-    setError(err.message || "Google sign-in failed. Please try again.");
-  } finally {
-    setGoogleLoading(false);
-  }
-}; 
+  };
 
   const features = [
     {
       icon: "▦",
       title: "Manage Schools",
-      description:
-        "Onboard and manage multiple schools with ease.",
+      description: "Onboard and manage multiple schools with ease.",
       color: "bg-blue-100 text-blue-700",
     },
     {
       icon: "♛",
       title: "Control Plans & Features",
-      description:
-        "Manage subscriptions and school-wise access.",
+      description: "Manage subscriptions and school-wise access.",
       color: "bg-violet-100 text-violet-700",
     },
     {
       icon: "▥",
       title: "Track Revenue & Operations",
-      description:
-        "Review platform insights and operational reports.",
+      description: "Review platform insights and operational reports.",
       color: "bg-emerald-100 text-emerald-700",
     },
   ];
@@ -170,16 +170,13 @@ export default function SuperAdminLogin() {
           </h1>
 
           <p className="mt-5 max-w-xl text-base leading-7 text-slate-600 sm:text-lg">
-            Empowering schools with seamless management,
-            insights and growth — all in one powerful platform.
+            Empowering schools with seamless management, insights and growth —
+            all in one powerful platform.
           </p>
 
           <div className="mt-9 space-y-5">
             {features.map((item) => (
-              <div
-                key={item.title}
-                className="flex items-center gap-4"
-              >
+              <div key={item.title} className="flex items-center gap-4">
                 <div
                   className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-2xl ${item.color}`}
                 >
@@ -187,9 +184,7 @@ export default function SuperAdminLogin() {
                 </div>
 
                 <div>
-                  <h2 className="font-bold text-slate-950">
-                    {item.title}
-                  </h2>
+                  <h2 className="font-bold text-slate-950">{item.title}</h2>
                   <p className="mt-1 text-sm leading-6 text-slate-600">
                     {item.description}
                   </p>
@@ -202,9 +197,7 @@ export default function SuperAdminLogin() {
           <div className="relative mt-10 hidden rounded-2xl border border-white/80 bg-white/80 p-5 shadow-xl backdrop-blur sm:block">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs text-slate-500">
-                  Platform overview
-                </p>
+                <p className="text-xs text-slate-500">Platform overview</p>
                 <h3 className="mt-1 font-bold text-slate-900">
                   Your schools at a glance
                 </h3>
@@ -217,10 +210,7 @@ export default function SuperAdminLogin() {
 
             <div className="mt-5 grid grid-cols-3 gap-3">
               {overviewItems.map(([label, value]) => (
-                <div
-                  key={label}
-                  className="rounded-xl bg-blue-50/80 p-3"
-                >
+                <div key={label} className="rounded-xl bg-blue-50/80 p-3">
                   <p className="text-xs text-slate-500">{label}</p>
                   <p className="mt-2 text-sm font-bold text-blue-700">
                     {value}
@@ -317,9 +307,7 @@ export default function SuperAdminLogin() {
 
                   <button
                     type="button"
-                    onClick={() =>
-                      setShowPassword((previous) => !previous)
-                    }
+                    onClick={() => setShowPassword((previous) => !previous)}
                     aria-label={
                       showPassword ? "Hide password" : "Show password"
                     }
@@ -336,9 +324,7 @@ export default function SuperAdminLogin() {
                   <input
                     type="checkbox"
                     checked={rememberMe}
-                    onChange={(event) =>
-                      setRememberMe(event.target.checked)
-                    }
+                    onChange={(event) => setRememberMe(event.target.checked)}
                     disabled={isLoading}
                     className="h-4 w-4 accent-blue-600"
                   />
@@ -377,9 +363,7 @@ export default function SuperAdminLogin() {
             {/* Divider */}
             <div className="my-7 flex items-center gap-4">
               <div className="h-px flex-1 bg-slate-200" />
-              <span className="text-xs font-semibold text-slate-400">
-                OR
-              </span>
+              <span className="text-xs font-semibold text-slate-400">OR</span>
               <div className="h-px flex-1 bg-slate-200" />
             </div>
 

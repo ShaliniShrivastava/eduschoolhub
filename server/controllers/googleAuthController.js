@@ -1,4 +1,3 @@
-
 const User = require("../models/User");
 const { verifyGoogleIdToken } = require("../services/googleAuthService");
 const {
@@ -17,28 +16,28 @@ async function googleSuperAdminLogin(req, res) {
       });
     }
 
-    // Verify Google's ID token.
-    const identity = await verifyGoogleIdToken(credential);
-
     const authorizedEmail = (
       process.env.SUPER_ADMIN_GOOGLE_EMAIL || ""
-    )
-      .trim()
-      .toLowerCase();
+    ).trim().toLowerCase();
 
-    const googleEmail = (identity.email || "")
-      .trim()
-      .toLowerCase();
+    if (!authorizedEmail) {
+      console.error("SUPER_ADMIN_GOOGLE_EMAIL is not configured.");
 
-    // Only the authorized Google email can access Super Admin.
-    if (!authorizedEmail || googleEmail !== authorizedEmail) {
+      return res.status(500).json({
+        success: false,
+        message: "Authentication is not configured.",
+      });
+    }
+
+    const identity = await verifyGoogleIdToken(credential);
+
+    if (identity.email !== authorizedEmail) {
       return res.status(403).json({
         success: false,
         message: "This Google account is not authorized.",
       });
     }
 
-    // Find the existing Super Admin account by verified email.
     const user = await User.findOne({
       email: authorizedEmail,
       role: "superAdmin",
@@ -51,7 +50,6 @@ async function googleSuperAdminLogin(req, res) {
       });
     }
 
-    // Do not replace an existing link to another Google account.
     if (user.googleId && user.googleId !== identity.googleId) {
       return res.status(403).json({
         success: false,
@@ -59,13 +57,22 @@ async function googleSuperAdminLogin(req, res) {
       });
     }
 
-    // Automatically save the verified Google ID if not linked.
     if (!user.googleId) {
-      user.googleId = identity.googleId;
-      await user.save();
+      try {
+        user.googleId = identity.googleId;
+        await user.save();
+      } catch (error) {
+        if (error.code === 11000) {
+          return res.status(409).json({
+            success: false,
+            message: "This Google account is already linked to another user.",
+          });
+        }
+
+        throw error;
+      }
     }
 
-    // Create the authenticated session.
     issueAccessCookie(res, user);
 
     return res.status(200).json({
@@ -76,6 +83,9 @@ async function googleSuperAdminLogin(req, res) {
         name: user.name,
         email: user.email,
         role: user.role,
+        schoolId: user.schoolId,
+        isFirstLogin: user.isFirstLogin,
+        isProfileComplete: user.isProfileComplete,
       },
     });
   } catch (error) {
@@ -89,10 +99,7 @@ async function googleSuperAdminLogin(req, res) {
       });
     }
 
-    console.error(
-      "Google Super Admin login failed:",
-      error.message
-    );
+    console.error("Google Super Admin login failed:", error.message);
 
     return res.status(500).json({
       success: false,

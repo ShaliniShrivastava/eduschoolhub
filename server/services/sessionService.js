@@ -1,4 +1,3 @@
-
 const jwt = require("jsonwebtoken");
 
 const STANDARD_TOKEN_EXPIRY = "12h";
@@ -47,11 +46,7 @@ function getAccessCookieOptions(rememberMe = false) {
 function issueAccessCookie(res, user, rememberMe = false) {
   const token = createAccessToken(user, rememberMe);
 
-  res.cookie(
-    "accessToken",
-    token,
-    getAccessCookieOptions(rememberMe)
-  );
+  res.cookie("accessToken", token, getAccessCookieOptions(rememberMe));
 }
 
 function clearAccessCookie(res) {

@@ -105,8 +105,8 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// A Google account can be linked to only one user.
-// Multiple null values are allowed for password-only accounts.
+// A Google identity can belong to only one user.
+// Password-only users may have googleId: null.
 userSchema.index(
   { googleId: 1 },
   {
