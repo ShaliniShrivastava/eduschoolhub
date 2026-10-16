@@ -12,6 +12,11 @@ const {
   createSchool,
 } = require("../controllers/schoolController");
 
+console.log(
+  "createSchoolAdmin:",
+  typeof createSchoolAdmin
+);
+
 const router = express.Router();
 
 const requireSuperAdmin = [

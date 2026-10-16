@@ -25,9 +25,11 @@ const authMiddleware = async (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET, {
       algorithms: ["HS256"],
+      issuer: "eduschoolhub",
+      audience: "eduschoolhub-client",
     });
 
-    if (!decoded.userId) {
+    if (!decoded.userId && !decoded.sub) {
       clearAccessCookie(res);
 
       return res.status(401).json({
@@ -37,7 +39,9 @@ const authMiddleware = async (req, res, next) => {
       });
     }
 
-    const user = await User.findById(decoded.userId);
+    const userId = decoded.userId || decoded.sub;
+
+    const user = await User.findById(userId);
 
     if (!user) {
       clearAccessCookie(res);
@@ -59,7 +63,7 @@ const authMiddleware = async (req, res, next) => {
       });
     }
 
-    // Always trust the current database role, not the JWT role claim.
+    // Always trust the current database role.
     req.user = user;
 
     return next();

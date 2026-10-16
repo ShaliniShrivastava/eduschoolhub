@@ -1,3 +1,4 @@
+
 const jwt = require("jsonwebtoken");
 
 const STANDARD_TOKEN_EXPIRY = "12h";
@@ -24,6 +25,8 @@ function createAccessToken(user, rememberMe = false) {
         ? REMEMBER_ME_TOKEN_EXPIRY
         : STANDARD_TOKEN_EXPIRY,
       algorithm: "HS256",
+      issuer: "eduschoolhub",
+      audience: "eduschoolhub-client",
     }
   );
 }
@@ -46,7 +49,11 @@ function getAccessCookieOptions(rememberMe = false) {
 function issueAccessCookie(res, user, rememberMe = false) {
   const token = createAccessToken(user, rememberMe);
 
-  res.cookie("accessToken", token, getAccessCookieOptions(rememberMe));
+  res.cookie(
+    "accessToken",
+    token,
+    getAccessCookieOptions(rememberMe)
+  );
 }
 
 function clearAccessCookie(res) {
