@@ -228,3 +228,18 @@ The authentication features have been developed in stages. The following flows s
 - Role-based authorization.
 
 Frontend login redirection, session restoration in the client, and protected dashboard access are separate client-side responsibilities and should be documented as complete only after implementation and testing.
+
+
+### Google Login
+
+The application supports Google Authentication, allowing users to sign in using their Google account.
+
+**Features:**
+- Sign in using a Google account.
+- Verify Google ID tokens on the backend.
+- Authenticate users securely using HTTP-only cookies.
+- Support role-based access for authorized users.
+
+**Configuration:**
+Configure the required Google OAuth credentials and environment variables in the server and client `.env` files before using Google Login.
+
