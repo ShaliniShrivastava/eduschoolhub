@@ -6,6 +6,7 @@ import {
   Navigate,
   Link,
 } from "react-router-dom";
+
 import { GoogleOAuthProvider } from "@react-oauth/google";
 
 // Authentication context and route protection
@@ -13,8 +14,15 @@ import { AuthProvider } from "./app-context/AuthContext";
 import ProtectedRoute from "./app-routes/ProtectedRoute";
 import RoleRoute from "./app-routes/RoleRoutes.jsx";
 
-// Public website
+// Public website pages
 import Home from "./features/main-website/main-website-pages/Home.jsx";
+import Features from "./features/main-website/main-website-pages/Features.jsx";
+import Modules from "./features/main-website/main-website-pages/Modules.jsx";
+import Pricing from "./features/main-website/main-website-pages/Pricing.jsx";
+import About from "./features/main-website/main-website-pages/About.jsx";
+import Contact from "./features/main-website/main-website-pages/Contact.jsx";
+
+// Public website components
 import MainNavbar from "./features/main-website/main-website-components/MainNavbar.jsx";
 import MainFooter from "./features/main-website/main-website-components/MainFooter.jsx";
 
@@ -27,8 +35,11 @@ import ResetPassword from "./features/auth/auth-pages/ResetPassword.jsx";
 // Super Admin pages
 import SuperAdminLogin from "./features/super-admin/super-admin-pages/SuperAdminLogin.jsx";
 import SuperAdminDashboard from "./features/super-admin/super-admin-pages/SuperAdminDashboard.jsx";
+
+// Google OAuth configuration
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
+// 404 Not Found Page
 function NotFound() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-5">
@@ -57,6 +68,7 @@ function NotFound() {
 }
 
 function App() {
+  // Check Google OAuth configuration
   if (!GOOGLE_CLIENT_ID) {
     console.warn(
       "VITE_GOOGLE_CLIENT_ID is missing from the frontend .env file."
@@ -68,7 +80,9 @@ function App() {
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            {/* Public website */}
+            {/* ================= PUBLIC WEBSITE ================= */}
+
+            {/* Home Page */}
             <Route
               path="/"
               element={
@@ -80,24 +94,98 @@ function App() {
               }
             />
 
-            {/* Authentication */}
+            {/* Features Page */}
+            <Route
+              path="/features"
+              element={
+                <>
+                  <MainNavbar />
+                  <Features />
+                  <MainFooter />
+                </>
+              }
+            />
+
+            {/* Modules Page */}
+            <Route
+              path="/modules"
+              element={
+                <>
+                  <MainNavbar />
+                  <Modules />
+                  <MainFooter />
+                </>
+              }
+            />
+
+            <Route
+  path="/pricing"
+  element={
+    <>
+      <MainNavbar />
+      <Pricing />
+      <MainFooter />
+    </>
+  }
+/>
+
+<Route
+  path="/about"
+  element={
+    <>
+      <MainNavbar />
+      <About />
+      <MainFooter />
+    </>
+  }
+/>
+
+<Route
+  path="/contact"
+  element={
+    <>
+      <MainNavbar />
+      <Contact />
+      <MainFooter />
+    </>
+  }
+/>
+
+            {/* ================= AUTHENTICATION ================= */}
+
+            {/* Login */}
             <Route path="/login" element={<Login />} />
+
+            {/* Register */}
             <Route path="/register" element={<Register />} />
+
+            {/* Forgot Password */}
             <Route
               path="/forgot-password"
               element={<ForgotPassword />}
             />
-            <Route path="/reset-password" element={<ResetPassword />} />
 
-            {/* Super Admin login */}
+            {/* Reset Password */}
+            <Route
+              path="/reset-password"
+              element={<ResetPassword />}
+            />
+
+            {/* ================= SUPER ADMIN ================= */}
+
+            {/* Super Admin Login */}
             <Route
               path="/super-admin/login"
               element={<SuperAdminLogin />}
             />
 
-            {/* Protected Super Admin dashboard */}
+            {/* Protected Super Admin Routes */}
             <Route element={<ProtectedRoute />}>
-              <Route element={<RoleRoute allowedRoles={["superAdmin"]} />}>
+              <Route
+                element={
+                  <RoleRoute allowedRoles={["superAdmin"]} />
+                }
+              >
                 <Route
                   path="/super-admin/dashboard"
                   element={<SuperAdminDashboard />}
@@ -105,7 +193,8 @@ function App() {
               </Route>
             </Route>
 
-            {/* Unknown routes */}
+            {/* ================= FALLBACK ROUTE ================= */}
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

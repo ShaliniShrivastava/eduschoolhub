@@ -1,6 +1,12 @@
 
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import {
+  ArrowUpRight,
+  GraduationCap,
+  Menu,
+  X,
+} from "lucide-react";
 
 const navLinks = [
   { name: "Home", id: "home" },
@@ -11,134 +17,281 @@ const navLinks = [
   { name: "Contact", id: "contact" },
 ];
 
+const pageRoutes = {
+  Features: "/features",
+  Modules: "/modules",
+  Pricing: "/pricing",
+  About: "/about",
+  Contact: "/contact",
+};
+
 export default function MainNavbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState("home");
 
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const isHomePage = location.pathname === "/";
+
+  // Close mobile menu when the route or URL hash changes.
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [location.pathname, location.hash]);
+
+  // Track active sections on the homepage only.
+  useEffect(() => {
+    if (!isHomePage) return;
+
+    const sectionIds = ["home", "contact"];
+
+    const sections = sectionIds
+      .map((id) => document.getElementById(id))
+      .filter(Boolean);
+
+    if (!sections.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visibleSections = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort(
+            (a, b) => b.intersectionRatio - a.intersectionRatio
+          );
+
+        if (visibleSections.length) {
+          setActiveSection(visibleSections[0].target.id);
+        }
+      },
+      {
+        rootMargin: "-100px 0px -55% 0px",
+        threshold: [0, 0.15, 0.3, 0.5],
+      }
+    );
+
+    sections.forEach((section) => observer.observe(section));
+
+    return () => observer.disconnect();
+  }, [isHomePage]);
+
+  // Navigate to a homepage section.
   const handleNavigation = (id) => {
     setIsMenuOpen(false);
 
-    if (window.location.pathname !== "/") {
-      window.location.href = `/#${id}`;
+    if (!isHomePage) {
+      navigate(`/#${id}`);
       return;
     }
 
-    document.getElementById(id)?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
+    const section = document.getElementById(id);
+
+    if (section) {
+      section.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+
+      window.history.replaceState(null, "", `/#${id}`);
+      setActiveSection(id);
+    }
+  };
+
+  // Shared styles for desktop and mobile navigation.
+  const getLinkClass = (isActive, mobile) =>
+    mobile
+      ? `flex items-center justify-between rounded-lg px-3 py-3 text-left text-sm font-semibold transition-colors ${
+          isActive
+            ? "bg-blue-50 text-blue-700"
+            : "text-slate-700 hover:bg-slate-50 hover:text-blue-700"
+        }`
+      : `relative whitespace-nowrap py-2 text-sm font-semibold transition-colors duration-200 ${
+          isActive
+            ? "text-blue-700"
+            : "text-slate-600 hover:text-blue-700"
+        }`;
+
+  // Desktop underline and mobile active dot.
+  const renderActiveIndicator = (isActive, mobile) => {
+    if (mobile) {
+      return isActive ? (
+        <span className="h-1.5 w-1.5 rounded-full bg-blue-600" />
+      ) : null;
+    }
+
+    return (
+      <span
+        className={`absolute -bottom-[2px] left-0 h-0.5 rounded-full bg-blue-600 transition-all duration-200 ${
+          isActive ? "w-full" : "w-0"
+        }`}
+      />
+    );
+  };
+
+  // Render navigation links and homepage section buttons.
+  const renderNavLink = (link, mobile = false) => {
+    const isPageLink = Boolean(pageRoutes[link.name]);
+
+    const isActive = isPageLink
+      ? location.pathname === pageRoutes[link.name]
+      : isHomePage && activeSection === link.id;
+
+    const className = getLinkClass(isActive, mobile);
+
+    const commonProps = {
+      key: link.id,
+      tabIndex: mobile && !isMenuOpen ? -1 : undefined,
+      "aria-current": isActive
+        ? isPageLink
+          ? "page"
+          : "location"
+        : undefined,
+      className,
+    };
+
+    // Standalone pages: Features, Modules, Pricing, About and Contact.
+    if (isPageLink) {
+      return (
+        <Link
+          {...commonProps}
+          to={pageRoutes[link.name]}
+          onClick={() => setIsMenuOpen(false)}
+        >
+          {link.name}
+          {renderActiveIndicator(isActive, mobile)}
+        </Link>
+      );
+    }
+
+    // Home navigates to the homepage hero section.
+    return (
+      <button
+        {...commonProps}
+        type="button"
+        onClick={() => handleNavigation(link.id)}
+      >
+        {link.name}
+        {renderActiveIndicator(isActive, mobile)}
+      </button>
+    );
   };
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-100 bg-white/95 shadow-sm backdrop-blur">
-      <nav className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3 lg:px-8">
+    <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/95 backdrop-blur-xl">
+      <nav
+        className="mx-auto flex h-[76px] max-w-[1440px] items-center justify-between px-4 sm:px-6 lg:px-10"
+        aria-label="Main navigation"
+      >
+        {/* Brand */}
         <button
+          type="button"
           onClick={() => handleNavigation("home")}
-          className="flex items-center gap-2 text-left"
+          className="group flex shrink-0 items-center gap-3 text-left"
           aria-label="EduSchoolHub home"
         >
-          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-2xl font-extrabold text-white">
-            E
+          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-lg shadow-blue-600/20 transition-transform duration-200 group-hover:scale-105">
+            <GraduationCap size={27} strokeWidth={2.2} />
           </span>
 
-          <span>
-            <span className="block text-xl font-extrabold tracking-tight text-slate-950">
+          <span className="block">
+            <span className="block text-[19px] font-extrabold leading-tight tracking-tight text-slate-950 sm:text-[21px]">
               Edu<span className="text-blue-600">SchoolHub</span>
             </span>
-            <span className="block text-[9px] font-semibold tracking-widest text-slate-500">
-              SMART SCHOOL MANAGEMENT
+
+            <span className="mt-1 block text-[9px] font-bold uppercase tracking-[0.19em] text-slate-500">
+              Smarter School Management
             </span>
           </span>
         </button>
 
-        <div className="hidden items-center gap-6 lg:flex">
-          {navLinks.map((link) => (
-            <button
-              key={link.id}
-              onClick={() => handleNavigation(link.id)}
-              className="text-sm font-medium text-slate-600 transition hover:text-blue-600"
-            >
-              {link.name}
-            </button>
-          ))}
+        {/* Desktop Navigation */}
+        <div className="hidden items-center gap-5 xl:flex 2xl:gap-7">
+          {navLinks.map((link) => renderNavLink(link))}
         </div>
 
-        <div className="hidden items-center gap-3 sm:flex">
+        {/* Desktop Actions */}
+        <div className="hidden shrink-0 items-center gap-3 sm:flex">
           <Link
             to="/super-admin/login"
-            className="rounded-lg border border-blue-600 px-4 py-2.5 text-sm font-semibold text-blue-600 transition hover:bg-blue-50"
+            className="inline-flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100 hover:text-blue-700 lg:px-4"
           >
-            Super Admin Login
+            Admin Login
+            <ArrowUpRight size={15} />
           </Link>
 
           <button
+            type="button"
             onClick={() => handleNavigation("contact")}
-            className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-blue-700"
+            className="group inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white shadow-md shadow-blue-600/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-600/25 lg:px-5"
           >
-            Book Demo →
+            Book a Demo
+            <ArrowUpRight
+              size={17}
+              className="transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+            />
           </button>
         </div>
 
+        {/* Mobile Menu Toggle */}
         <button
           type="button"
           onClick={() => setIsMenuOpen((previous) => !previous)}
-          aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+          aria-label={
+            isMenuOpen
+              ? "Close navigation menu"
+              : "Open navigation menu"
+          }
           aria-expanded={isMenuOpen}
-          className="rounded-lg border border-slate-200 p-2 text-slate-700 sm:hidden"
+          aria-controls="mobile-navigation"
+          className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 sm:hidden"
         >
-          {isMenuOpen ? (
-            <svg
-              viewBox="0 0 24 24"
-              className="h-6 w-6"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M6 6l12 12M18 6L6 18" />
-            </svg>
-          ) : (
-            <svg
-              viewBox="0 0 24 24"
-              className="h-6 w-6"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          )}
+          {isMenuOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
       </nav>
 
-      {isMenuOpen && (
-        <div className="border-t border-slate-100 bg-white px-5 py-4 sm:hidden">
-          <div className="mx-auto flex max-w-7xl flex-col gap-4">
-            {navLinks.map((link) => (
-              <button
-                key={link.id}
-                onClick={() => handleNavigation(link.id)}
-                className="py-1 text-left text-sm font-medium text-slate-700 hover:text-blue-600"
-              >
-                {link.name}
-              </button>
-            ))}
+      {/* Mobile Navigation */}
+      <div
+        id="mobile-navigation"
+        className={`grid overflow-hidden transition-[grid-template-rows,opacity] duration-300 ease-in-out sm:hidden ${
+          isMenuOpen
+            ? "grid-rows-[1fr] opacity-100"
+            : "grid-rows-[0fr] opacity-0"
+        }`}
+        aria-hidden={!isMenuOpen}
+      >
+        <div className="min-h-0">
+          <div className="border-t border-slate-100 bg-white px-5 pb-5 pt-3 shadow-lg shadow-slate-900/5">
+            <div className="mx-auto flex max-w-xl flex-col">
+              {navLinks.map((link) => renderNavLink(link, true))}
 
-            <Link
-              to="/super-admin/login"
-              onClick={() => setIsMenuOpen(false)}
-              className="rounded-lg border border-blue-600 px-4 py-3 text-center text-sm font-semibold text-blue-600"
-            >
-              Super Admin Login
-            </Link>
+              <div className="mt-3 grid grid-cols-1 gap-3 border-t border-slate-100 pt-4">
+                <Link
+                  to="/super-admin/login"
+                  tabIndex={isMenuOpen ? 0 : -1}
+                  onClick={() => setIsMenuOpen(false)}
+                  className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                >
+                  Admin Login
+                  <ArrowUpRight size={16} />
+                </Link>
 
-            <button
-              onClick={() => handleNavigation("contact")}
-              className="rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white"
-            >
-              Book Demo →
-            </button>
+                <button
+                  type="button"
+                  onClick={() => handleNavigation("contact")}
+                  tabIndex={isMenuOpen ? 0 : -1}
+                  className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white shadow-md shadow-blue-600/20 transition hover:bg-blue-700"
+                >
+                  Book a Demo
+                  <ArrowUpRight size={17} />
+                </button>
+              </div>
+
+              <p className="mt-4 text-center text-xs text-slate-400">
+                Simplifying school management, one step at a time.
+              </p>
+            </div>
           </div>
         </div>
-      )}
+      </div>
     </header>
   );
 }
