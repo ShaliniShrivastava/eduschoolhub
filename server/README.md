@@ -243,3 +243,44 @@ The application supports Google Authentication, allowing users to sign in using 
 **Configuration:**
 Configure the required Google OAuth credentials and environment variables in the server and client `.env` files before using Google Login.
 
+Date: 22 October 2026
+Contact Enquiry Backend
+- Added a MongoDB model: models/ContactMessage.js.
+- Added controller logic for server-side validation and saving
+  enquiries.
+- Added POST /api/contact route with rate limiting.
+- Registered the contact router in server.js.
+- Reused the existing Nodemailer service for email notifications.
+- Contact notification recipient uses the existing SUPER_ADMIN_EMAIL
+  environment variable.
+- Enquiries are saved before email delivery is attempted, so an email
+  failure does not undo a saved enquiry.
+Book a Demo
+- Existing demo router is registered in server.js at
+  /api/demo-requests.
+- Exact demo controller/model changes were not verified in the
+  conversation; check existing files for implementation details.
+Files Involved
+- server/models/ContactMessage.js --- enquiry schema.
+- server/controllers/contactController.js --- validation, database
+  save, email attempt.
+- server/routes/contactRoutes.js --- contact endpoint and rate
+  limit.
+- server/server.js --- registers contact routes.
+- server/services/emailService.js --- existing email service reused.
+- server/routes/demoRoutes.js --- existing Book a Demo route.
+- server/.env --- existing SMTP settings and SUPER_ADMIN_EMAIL.
+API
+POST /api/contact
+
+Expected fields: fullName, schoolName, email, phone, role,
+studentCount, message.
+Run and Test
+cd server
+npm run dev
+- Submit a valid enquiry and confirm it is stored in MongoDB.
+- Verify the notification email.
+- Test invalid fields and rate limiting.
+- Test Book a Demo using the actual route defined in demoRoutes.js.
+Stack: Node.js, Express, MongoDB/Mongoose, Nodemailer. No Python is
+used in the application backend.
