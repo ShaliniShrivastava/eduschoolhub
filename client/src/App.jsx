@@ -1,10 +1,4 @@
-
-import {
-  BrowserRouter,
-  Routes,
-  Route,
-  Link,
-} from "react-router-dom";
+import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { AuthProvider } from "./app-context/AuthContext";
@@ -74,14 +68,12 @@ function NotFound() {
 function App() {
   if (!GOOGLE_CLIENT_ID) {
     console.warn(
-      "VITE_GOOGLE_CLIENT_ID is missing from your environment variables."
+      "VITE_GOOGLE_CLIENT_ID is missing from your environment variables.",
     );
   }
 
   return (
-    <GoogleOAuthProvider
-      clientId={GOOGLE_CLIENT_ID || "placeholder"}
-    >
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID || "placeholder"}>
       <AuthProvider>
         <BrowserRouter>
           <Routes>
@@ -155,33 +147,23 @@ function App() {
 
             <Route path="/register" element={<Register />} />
 
-            <Route
-              path="/forgot-password"
-              element={<ForgotPassword />}
-            />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
 
-            <Route
-              path="/reset-password"
-              element={<ResetPassword />}
-            />
+            <Route path="/reset-password" element={<ResetPassword />} />
 
             {/* Super Admin login - separate from other roles */}
-            <Route
-              path="/super-admin/login"
-              element={<SuperAdminLogin />}
-            />
+            <Route path="/super-admin/login" element={<SuperAdminLogin />} />
 
             {/* Protected Super Admin dashboard */}
-            <Route
-              path="/super-admin/dashboard"
-              element={
-                <ProtectedRoute>
-                  <RoleRoute allowedRoles={["superAdmin"]}>
-                    <SuperAdminDashboard />
-                  </RoleRoute>
-                </ProtectedRoute>
-              }
-            />
+
+            <Route element={<ProtectedRoute />}>
+              <Route element={<RoleRoute allowedRoles={["superAdmin"]} />}>
+                <Route
+                  path="/super-admin/dashboard"
+                  element={<SuperAdminDashboard />}
+                />
+              </Route>
+            </Route>
 
             {/* 404 fallback */}
             <Route path="*" element={<NotFound />} />

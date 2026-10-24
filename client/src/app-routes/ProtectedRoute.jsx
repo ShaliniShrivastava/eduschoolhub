@@ -17,7 +17,7 @@ export default function ProtectedRoute() {
     return (
       <Navigate to="/super-admin/login" state={{ from: location }} replace />
     );
-  }
+  } 
 
   return <Outlet />;
 }
