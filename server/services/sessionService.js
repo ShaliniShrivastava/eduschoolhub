@@ -32,10 +32,12 @@ function createAccessToken(user, rememberMe = false) {
 }
 
 function getAccessCookieOptions(rememberMe = false) {
+  const isProduction = process.env.NODE_ENV === "production";
+
   const options = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
     path: "/",
   };
 
