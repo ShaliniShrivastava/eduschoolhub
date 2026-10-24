@@ -16,6 +16,8 @@ const contactRoutes = require("./routes/contactRoutes");
 
 const app = express();
 
+app.set("trust proxy", 1);
+
 app.use(
   helmet({
     crossOriginOpenerPolicy: {
@@ -36,6 +38,52 @@ app.use(
 app.use(express.json({ limit: "10kb" }));
 app.use(cookieParser());
 
+// Health endpoint — database check se independent
+app.get("/api/health", (req, res) => {
+  return res.status(200).json({
+    success: true,
+    message: "EduSchoolHub API is running",
+  });
+});
+
+// Database connection cache for Vercel
+let dbConnectionPromise;
+
+const ensureDBConnection = async (req, res, next) => {
+  try {
+    if (!process.env.JWT_SECRET || !process.env.MONGO_URI) {
+      return res.status(500).json({
+        success: false,
+        message: "Server configuration error",
+      });
+    }
+
+    if (!dbConnectionPromise) {
+      dbConnectionPromise = connectDB().catch((error) => {
+        dbConnectionPromise = null;
+        throw error;
+      });
+    }
+
+    await dbConnectionPromise;
+    return next();
+  } catch (error) {
+    console.error("Database connection failed:", error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: "Database connection failed",
+    });
+  }
+};
+
+// Ensure database is connected before API routes
+app.use("/api/auth", ensureDBConnection);
+app.use("/api/superadmin", ensureDBConnection);
+app.use("/api/google-auth", ensureDBConnection);
+app.use("/api/demo-requests", ensureDBConnection);
+app.use("/api/contact", ensureDBConnection);
+
 // Authentication rate limiter
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -54,45 +102,6 @@ app.use("/api/superadmin", superAdminRoutes);
 app.use("/api/google-auth", googleAuthRoutes);
 app.use("/api/demo-requests", demoRoutes);
 app.use("/api/contact", contactRoutes);
-
-// Health endpoint
-app.get("/api/health", (req, res) => {
-  return res.status(200).json({
-    success: true,
-    message: "EduSchoolHub API is running",
-  });
-});
-
-// Vercel serverless handler
-let dbConnectionPromise;
-
-app.use(async (req, res, next) => {
-  try {
-    if (!process.env.JWT_SECRET) {
-      return res.status(500).json({
-        success: false,
-        message: "Server configuration error",
-      });
-    }
-
-    if (!dbConnectionPromise) {
-      dbConnectionPromise = connectDB().catch((error) => {
-        dbConnectionPromise = null;
-        throw error;
-      });
-    }
-
-    await dbConnectionPromise;
-    next();
-  } catch (error) {
-    console.error("Database connection failed:", error.message);
-
-    return res.status(500).json({
-      success: false,
-      message: "Database connection failed",
-    });
-  }
-});
 
 // Export Express app for Vercel
 module.exports = app;
@@ -114,7 +123,7 @@ if (require.main === module) {
       });
     } catch (error) {
       console.error("Server startup failed:", error.message);
-      process.exit(1);
+      process.exitCode = 1;
     }
   })();
 }
