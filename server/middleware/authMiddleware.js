@@ -1,3 +1,5 @@
+// server/middleware/authMiddleware.js
+
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const { clearAccessCookie } = require("../services/sessionService");
@@ -29,7 +31,9 @@ const authMiddleware = async (req, res, next) => {
       audience: "eduschoolhub-client",
     });
 
-    if (!decoded.userId && !decoded.sub) {
+    const userId = decoded.userId || decoded.sub;
+
+    if (!userId) {
       clearAccessCookie(res);
 
       return res.status(401).json({
@@ -38,8 +42,6 @@ const authMiddleware = async (req, res, next) => {
         code: "INVALID_TOKEN",
       });
     }
-
-    const userId = decoded.userId || decoded.sub;
 
     const user = await User.findById(userId);
 
@@ -63,7 +65,6 @@ const authMiddleware = async (req, res, next) => {
       });
     }
 
-    // Always trust the current database role.
     req.user = user;
 
     return next();
