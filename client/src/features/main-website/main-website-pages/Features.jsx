@@ -1,4 +1,4 @@
-
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -21,8 +21,12 @@ import {
   Megaphone,
   BookMarked,
   School,
+  Search,
+  SlidersHorizontal,
+  X,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import BookDemoForm from "../main-website-components/BookDemoForm";
 
 const features = [
   {
@@ -212,7 +216,9 @@ function FeatureCard({ feature }) {
           <Icon size={23} strokeWidth={1.8} />
         </div>
 
-        <span className={`text-sm font-extrabold tracking-widest ${styles.number}`}>
+        <span
+          className={`text-sm font-extrabold tracking-widest ${styles.number}`}
+        >
           {feature.number}
         </span>
       </div>
@@ -239,7 +245,85 @@ function FeatureCard({ feature }) {
   );
 }
 
+const featureCategories = [
+  "All Features",
+  "Academics",
+  "Administration",
+  "Communication",
+  "Reports & Access",
+];
+
+function getFeatureCategory(feature) {
+  const academics = [
+    "Attendance Management",
+    "Exams & Results",
+    "Timetable Management",
+    "Student Promotion",
+    "Classes & Subjects",
+  ];
+
+  const administration = [
+    "Student Management",
+    "Fees Management",
+    "Teacher & Staff Management",
+  ];
+
+  const communication = [
+    "Parent & Student Portal",
+    "Notices & Notifications",
+  ];
+
+  if (academics.includes(feature.title)) return "Academics";
+  if (administration.includes(feature.title)) return "Administration";
+  if (communication.includes(feature.title)) return "Communication";
+
+  return "Reports & Access";
+}
+
 export default function Features() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeCategory, setActiveCategory] = useState("All Features");
+  const [isDemoOpen, setIsDemoOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isDemoOpen) return undefined;
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") setIsDemoOpen(false);
+    };
+
+    const previousOverflow = document.body.style.overflow;
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isDemoOpen]);
+
+  const filteredFeatures = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+
+    return features.filter((feature) => {
+      const matchesCategory =
+        activeCategory === "All Features" ||
+        getFeatureCategory(feature) === activeCategory;
+
+      const searchableText = [
+        feature.title,
+        feature.description,
+        ...feature.tags,
+        getFeatureCategory(feature),
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      return matchesCategory && (!query || searchableText.includes(query));
+    });
+  }, [searchQuery, activeCategory]);
+
   return (
     <main className="overflow-hidden bg-white text-slate-900">
       {/* Hero */}
@@ -247,6 +331,7 @@ export default function Features() {
         <div className="absolute inset-0 -z-10">
           <div className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-blue-200/30 blur-3xl" />
           <div className="absolute -bottom-40 -left-20 h-96 w-96 rounded-full bg-indigo-200/30 blur-3xl" />
+
           <div
             className="absolute inset-0 opacity-[0.035]"
             style={{
@@ -275,13 +360,14 @@ export default function Features() {
             </p>
 
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-              <a
-                href="/#contact"
+              <button
+                type="button"
+                onClick={() => setIsDemoOpen(true)}
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-700"
               >
                 Book a Demo
                 <ArrowRight size={18} />
-              </a>
+              </button>
 
               <a
                 href="#all-features"
@@ -297,6 +383,7 @@ export default function Features() {
                 <CheckCircle2 size={17} className="text-emerald-600" />
                 Organized school records
               </span>
+
               <span className="inline-flex items-center gap-2">
                 <CheckCircle2 size={17} className="text-emerald-600" />
                 Role-based access
@@ -314,6 +401,7 @@ export default function Features() {
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white">
                     <School size={21} />
                   </div>
+
                   <div>
                     <p className="text-sm font-extrabold text-slate-900">
                       School Overview
@@ -334,6 +422,7 @@ export default function Features() {
                   <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100 text-blue-700">
                     <Users size={19} />
                   </div>
+
                   <p className="text-xs font-medium text-slate-500">
                     Student Records
                   </p>
@@ -349,6 +438,7 @@ export default function Features() {
                   <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-violet-100 text-violet-700">
                     <ClipboardCheck size={19} />
                   </div>
+
                   <p className="text-xs font-medium text-slate-500">
                     Attendance
                   </p>
@@ -364,6 +454,7 @@ export default function Features() {
                   <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
                     <BookMarked size={19} />
                   </div>
+
                   <p className="text-xs font-medium text-slate-500">
                     Examinations
                   </p>
@@ -379,6 +470,7 @@ export default function Features() {
                   <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
                     <IndianRupee size={19} />
                   </div>
+
                   <p className="text-xs font-medium text-slate-500">
                     Fee Records
                   </p>
@@ -396,6 +488,7 @@ export default function Features() {
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-blue-700 shadow-sm">
                     <BellRing size={18} />
                   </div>
+
                   <div>
                     <p className="text-sm font-bold text-slate-900">
                       School updates in one place
@@ -413,6 +506,7 @@ export default function Features() {
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
                 <ShieldCheck size={21} />
               </div>
+
               <div>
                 <p className="text-sm font-bold text-slate-900">
                   Role-based access
@@ -450,7 +544,7 @@ export default function Features() {
         className="scroll-mt-24 bg-slate-50 px-5 py-16 sm:px-8 sm:py-20 lg:px-10"
       >
         <div className="mx-auto max-w-7xl">
-          <div className="mb-10 flex flex-col justify-between gap-5 md:flex-row md:items-end">
+          <div className="mb-8 flex flex-col justify-between gap-5 md:flex-row md:items-end">
             <div className="max-w-2xl">
               <SectionLabel>Platform capabilities</SectionLabel>
 
@@ -459,21 +553,106 @@ export default function Features() {
               </h2>
 
               <p className="mt-4 leading-7 text-slate-600">
-                Practical tools for managing students, staff, academics
-                and essential school operations.
+                Find the tools you need for students, staff, academics and
+                everyday school operations.
               </p>
             </div>
 
-            <p className="text-sm font-semibold text-slate-500">
-              {features.length} essential feature areas
-            </p>
+            <div className="inline-flex w-fit items-center gap-2 rounded-xl border border-blue-100 bg-white px-4 py-3 text-sm font-semibold text-slate-600 shadow-sm">
+              <SlidersHorizontal size={17} className="text-blue-600" />
+              <span>
+                {filteredFeatures.length} of {features.length} features
+              </span>
+            </div>
           </div>
 
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {features.map((feature) => (
-              <FeatureCard key={feature.number} feature={feature} />
-            ))}
+          {/* Interactive search and category filters */}
+          <div className="mb-8 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="relative w-full lg:max-w-md">
+                <Search
+                  size={19}
+                  className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                />
+
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Search features, e.g. attendance or fees..."
+                  aria-label="Search platform features"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3.5 pl-11 pr-11 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                />
+
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    aria-label="Clear feature search"
+                    className="absolute right-3 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-200 hover:text-slate-700"
+                  >
+                    <X size={16} />
+                  </button>
+                )}
+              </div>
+
+              <div
+                className="flex flex-wrap gap-2"
+                role="group"
+                aria-label="Filter features by category"
+              >
+                {featureCategories.map((category) => (
+                  <button
+                    key={category}
+                    type="button"
+                    onClick={() => setActiveCategory(category)}
+                    aria-pressed={activeCategory === category}
+                    className={`rounded-xl px-3.5 py-2.5 text-xs font-bold transition sm:text-sm ${
+                      activeCategory === category
+                        ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
+                        : "border border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                    }`}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
+
+          {filteredFeatures.length > 0 ? (
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {filteredFeatures.map((feature) => (
+                <FeatureCard key={feature.number} feature={feature} />
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
+                <Search size={24} />
+              </div>
+
+              <h3 className="mt-4 text-lg font-bold text-slate-900">
+                No matching features
+              </h3>
+
+              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
+                Try a different search term or select another category to
+                explore more features.
+              </p>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery("");
+                  setActiveCategory("All Features");
+                }}
+                className="mt-5 inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-blue-700"
+              >
+                Reset filters <X size={16} />
+              </button>
+            </div>
+          )}
         </div>
       </section>
 
@@ -517,6 +696,7 @@ export default function Features() {
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
                     <CheckCircle2 size={19} />
                   </div>
+
                   <div>
                     <h3 className="font-bold text-slate-900">
                       {item.title}
@@ -536,6 +716,7 @@ export default function Features() {
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-white">
                   <School size={23} />
                 </div>
+
                 <div>
                   <h3 className="font-extrabold text-slate-900">
                     School Management
@@ -579,6 +760,7 @@ export default function Features() {
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
                         <Icon size={19} />
                       </div>
+
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-bold text-slate-900">
                           {item.title}
@@ -587,6 +769,7 @@ export default function Features() {
                           {item.subtitle}
                         </p>
                       </div>
+
                       <CheckCircle2
                         size={18}
                         className="shrink-0 text-emerald-600"
@@ -632,26 +815,66 @@ export default function Features() {
               </p>
             </div>
 
-            <div className="flex w-full shrink-0 flex-col gap-3 sm:w-auto sm:flex-row">
-              <a
-                href="/#contact"
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-3.5 text-sm font-extrabold text-blue-700 transition hover:-translate-y-0.5 hover:bg-blue-50"
-              >
-                Book a Demo
-                <ArrowRight size={18} />
-              </a>
-
-              <Link
-                to="/"
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/30 px-6 py-3.5 text-sm font-bold text-white transition hover:bg-white/10"
-              >
-                Back to Home
-                <ArrowUpRight size={17} />
-              </Link>
-            </div>
+            <button
+              type="button"
+              onClick={() => setIsDemoOpen(true)}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-3.5 text-sm font-extrabold text-blue-700 transition hover:-translate-y-0.5 hover:bg-blue-50"
+            >
+              Book a Demo
+              <ArrowRight size={18} />
+            </button>
           </div>
         </div>
       </section>
+
+      {/* Book a Demo Modal */}
+      {isDemoOpen && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-slate-950/60 p-3 backdrop-blur-sm sm:p-6"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setIsDemoOpen(false);
+            }
+          }}
+          role="presentation"
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="book-demo-modal-title"
+            className="relative my-auto max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-8"
+          >
+            <button
+              type="button"
+              onClick={() => setIsDemoOpen(false)}
+              aria-label="Close Book a Demo form"
+              className="absolute right-3 top-3 z-10 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 sm:right-5 sm:top-5"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="mb-5 pr-10 sm:mb-6">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-600">
+                EduSchoolHub
+              </p>
+
+              <h2
+                id="book-demo-modal-title"
+                className="mt-2 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl"
+              >
+                Book a Demo
+              </h2>
+
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                Tell us a little about your school and our team will help you
+                explore EduSchoolHub.
+              </p>
+            </div>
+
+            <BookDemoForm />
+          </section>
+        </div>
+      )}
     </main>
   );
 }

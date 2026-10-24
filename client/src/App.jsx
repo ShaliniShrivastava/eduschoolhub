@@ -3,13 +3,10 @@ import {
   BrowserRouter,
   Routes,
   Route,
-  Navigate,
   Link,
 } from "react-router-dom";
 
 import { GoogleOAuthProvider } from "@react-oauth/google";
-
-// Authentication context and route protection
 import { AuthProvider } from "./app-context/AuthContext";
 import ProtectedRoute from "./app-routes/ProtectedRoute";
 import RoleRoute from "./app-routes/RoleRoutes.jsx";
@@ -25,6 +22,7 @@ import Contact from "./features/main-website/main-website-pages/Contact.jsx";
 // Public website components
 import MainNavbar from "./features/main-website/main-website-components/MainNavbar.jsx";
 import MainFooter from "./features/main-website/main-website-components/MainFooter.jsx";
+import BookDemoForm from "./features/main-website/main-website-components/BookDemoForm.jsx";
 
 // Authentication pages
 import Login from "./features/auth/auth-pages/Login.jsx";
@@ -36,169 +34,160 @@ import ResetPassword from "./features/auth/auth-pages/ResetPassword.jsx";
 import SuperAdminLogin from "./features/super-admin/super-admin-pages/SuperAdminLogin.jsx";
 import SuperAdminDashboard from "./features/super-admin/super-admin-pages/SuperAdminDashboard.jsx";
 
-// Google OAuth configuration
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
-// 404 Not Found Page
+// Public website layout
+function PublicLayout({ children }) {
+  return (
+    <>
+      <MainNavbar />
+      <main>{children}</main>
+      <MainFooter />
+    </>
+  );
+}
+
+// 404 page
 function NotFound() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-5">
-      <div className="max-w-md text-center">
-        <p className="text-sm font-bold tracking-widest text-blue-600">
-          ERROR 404
-        </p>
+    <div className="flex min-h-[70vh] flex-col items-center justify-center px-4 text-center">
+      <h1 className="text-6xl font-bold text-blue-600">404</h1>
 
-        <h1 className="mt-3 text-4xl font-extrabold text-slate-900">
-          Page Not Found
-        </h1>
+      <h2 className="mt-4 text-2xl font-semibold text-gray-800">
+        Page Not Found
+      </h2>
 
-        <p className="mt-4 text-slate-600">
-          The page you are looking for does not exist or may have been moved.
-        </p>
+      <p className="mt-3 max-w-md text-gray-600">
+        The page you are looking for does not exist or may have been moved.
+      </p>
 
-        <Link
-          to="/"
-          className="mt-7 inline-flex items-center justify-center rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white transition hover:bg-blue-700"
-        >
-          Back to Home
-        </Link>
-      </div>
+      <Link
+        to="/"
+        className="mt-6 inline-flex rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white transition hover:bg-blue-700"
+      >
+        Back to Home
+      </Link>
     </div>
   );
 }
 
 function App() {
-  // Check Google OAuth configuration
   if (!GOOGLE_CLIENT_ID) {
     console.warn(
-      "VITE_GOOGLE_CLIENT_ID is missing from the frontend .env file."
+      "VITE_GOOGLE_CLIENT_ID is missing from your environment variables."
     );
   }
 
   return (
-    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID || "placeholder"}>
-      <BrowserRouter>
-        <AuthProvider>
+    <GoogleOAuthProvider
+      clientId={GOOGLE_CLIENT_ID || "placeholder"}
+    >
+      <AuthProvider>
+        <BrowserRouter>
           <Routes>
-            {/* ================= PUBLIC WEBSITE ================= */}
-
-            {/* Home Page */}
+            {/* Public website routes */}
             <Route
               path="/"
               element={
-                <>
-                  <MainNavbar />
+                <PublicLayout>
                   <Home />
-                  <MainFooter />
-                </>
+                </PublicLayout>
               }
             />
 
-            {/* Features Page */}
             <Route
               path="/features"
               element={
-                <>
-                  <MainNavbar />
+                <PublicLayout>
                   <Features />
-                  <MainFooter />
-                </>
+                </PublicLayout>
               }
             />
 
-            {/* Modules Page */}
             <Route
               path="/modules"
               element={
-                <>
-                  <MainNavbar />
+                <PublicLayout>
                   <Modules />
-                  <MainFooter />
-                </>
+                </PublicLayout>
               }
             />
 
             <Route
-  path="/pricing"
-  element={
-    <>
-      <MainNavbar />
-      <Pricing />
-      <MainFooter />
-    </>
-  }
-/>
+              path="/pricing"
+              element={
+                <PublicLayout>
+                  <Pricing />
+                </PublicLayout>
+              }
+            />
 
-<Route
-  path="/about"
-  element={
-    <>
-      <MainNavbar />
-      <About />
-      <MainFooter />
-    </>
-  }
-/>
+            <Route
+              path="/about"
+              element={
+                <PublicLayout>
+                  <About />
+                </PublicLayout>
+              }
+            />
 
-<Route
-  path="/contact"
-  element={
-    <>
-      <MainNavbar />
-      <Contact />
-      <MainFooter />
-    </>
-  }
-/>
+            <Route
+              path="/contact"
+              element={
+                <PublicLayout>
+                  <Contact />
+                </PublicLayout>
+              }
+            />
 
-            {/* ================= AUTHENTICATION ================= */}
+            {/* Book a Demo */}
+            <Route
+              path="/book-demo"
+              element={
+                <PublicLayout>
+                  <BookDemoForm />
+                </PublicLayout>
+              }
+            />
 
-            {/* Login */}
+            {/* Authentication routes */}
             <Route path="/login" element={<Login />} />
 
-            {/* Register */}
             <Route path="/register" element={<Register />} />
 
-            {/* Forgot Password */}
             <Route
               path="/forgot-password"
               element={<ForgotPassword />}
             />
 
-            {/* Reset Password */}
             <Route
               path="/reset-password"
               element={<ResetPassword />}
             />
 
-            {/* ================= SUPER ADMIN ================= */}
-
-            {/* Super Admin Login */}
+            {/* Super Admin login - separate from other roles */}
             <Route
               path="/super-admin/login"
               element={<SuperAdminLogin />}
             />
 
-            {/* Protected Super Admin Routes */}
-            <Route element={<ProtectedRoute />}>
-              <Route
-                element={
-                  <RoleRoute allowedRoles={["superAdmin"]} />
-                }
-              >
-                <Route
-                  path="/super-admin/dashboard"
-                  element={<SuperAdminDashboard />}
-                />
-              </Route>
-            </Route>
+            {/* Protected Super Admin dashboard */}
+            <Route
+              path="/super-admin/dashboard"
+              element={
+                <ProtectedRoute>
+                  <RoleRoute allowedRoles={["superAdmin"]}>
+                    <SuperAdminDashboard />
+                  </RoleRoute>
+                </ProtectedRoute>
+              }
+            />
 
-            {/* ================= FALLBACK ROUTE ================= */}
-
+            {/* 404 fallback */}
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </AuthProvider>
-      </BrowserRouter>
+        </BrowserRouter>
+      </AuthProvider>
     </GoogleOAuthProvider>
   );
 }

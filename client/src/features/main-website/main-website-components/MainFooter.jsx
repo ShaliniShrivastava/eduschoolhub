@@ -2,6 +2,7 @@
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
+  ArrowUp,
   ArrowUpRight,
   GraduationCap,
   Mail,
@@ -10,6 +11,13 @@ import {
 
 export default function MainFooter() {
   const currentYear = new Date().getFullYear();
+
+  const handleBackToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
 
   return (
     <footer className="bg-slate-950 text-slate-300">
@@ -38,7 +46,7 @@ export default function MainFooter() {
 
           <Link
             to="/about"
-            className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-blue-400 transition-colors hover:text-blue-300"
+            className="group mt-5 inline-flex items-center gap-2 text-sm font-semibold text-blue-400 transition-colors hover:text-blue-300"
           >
             Learn more about us
             <ArrowRight
@@ -56,50 +64,32 @@ export default function MainFooter() {
 
           <ul className="mt-5 space-y-3.5 text-sm">
             <li>
-              <Link
-                to="/"
-                className="transition-colors hover:text-blue-400"
-              >
+              <Link to="/" className="transition-colors hover:text-blue-400">
                 Home
               </Link>
             </li>
             <li>
-              <Link
-                to="/features"
-                className="transition-colors hover:text-blue-400"
-              >
+              <Link to="/features" className="transition-colors hover:text-blue-400">
                 Features
               </Link>
             </li>
             <li>
-              <Link
-                to="/modules"
-                className="transition-colors hover:text-blue-400"
-              >
+              <Link to="/modules" className="transition-colors hover:text-blue-400">
                 Modules
               </Link>
             </li>
             <li>
-              <Link
-                to="/pricing"
-                className="transition-colors hover:text-blue-400"
-              >
+              <Link to="/pricing" className="transition-colors hover:text-blue-400">
                 Pricing
               </Link>
             </li>
             <li>
-              <Link
-                to="/about"
-                className="transition-colors hover:text-blue-400"
-              >
+              <Link to="/about" className="transition-colors hover:text-blue-400">
                 About Us
               </Link>
             </li>
             <li>
-              <Link
-                to="/contact"
-                className="transition-colors hover:text-blue-400"
-              >
+              <Link to="/contact" className="transition-colors hover:text-blue-400">
                 Contact Us
               </Link>
             </li>
@@ -123,25 +113,19 @@ export default function MainFooter() {
             </li>
             <li>
               <Link
-                to="/contact"
+                to="/book-demo"
                 className="transition-colors hover:text-blue-400"
               >
                 Book a Demo
               </Link>
             </li>
             <li>
-              <Link
-                to="/features"
-                className="transition-colors hover:text-blue-400"
-              >
+              <Link to="/features" className="transition-colors hover:text-blue-400">
                 School Management
               </Link>
             </li>
             <li>
-              <Link
-                to="/pricing"
-                className="transition-colors hover:text-blue-400"
-              >
+              <Link to="/pricing" className="transition-colors hover:text-blue-400">
                 Subscription Plans
               </Link>
             </li>
@@ -178,6 +162,7 @@ export default function MainFooter() {
                 <p className="text-sm font-bold text-white">
                   WhatsApp Support
                 </p>
+
                 <p className="mt-1 text-xs leading-5 text-slate-400">
                   Need help? Our WhatsApp contact details will be available
                   here soon.
@@ -193,6 +178,24 @@ export default function MainFooter() {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Back to Top */}
+      <div className="border-t border-white/10 px-5 py-5">
+        <div className="mx-auto flex max-w-7xl justify-center">
+          <button
+            type="button"
+            onClick={handleBackToTop}
+            aria-label="Back to top"
+            className="group inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 py-2.5 text-sm font-semibold text-slate-300 transition-all duration-300 hover:border-blue-500 hover:bg-blue-600 hover:text-white focus:outline-none focus:ring-4 focus:ring-blue-500/30"
+          >
+            Back to Top
+            <ArrowUp
+              size={16}
+              className="transition-transform duration-300 group-hover:-translate-y-1"
+            />
+          </button>
         </div>
       </div>
 

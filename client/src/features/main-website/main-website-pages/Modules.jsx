@@ -1,350 +1,559 @@
-import React, { useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+
+import React, { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   ArrowRight,
   ArrowUpRight,
-  GraduationCap,
-  Users,
-  UserRoundCheck,
-  BookOpen,
-  CalendarDays,
-  ClipboardCheck,
-  Wallet,
-  FileBarChart,
-  MessageSquare,
+  BarChart3,
   Bell,
-  ShieldCheck,
-  School,
+  BookOpen,
   Bus,
-  Library,
-  UserCog,
-  Settings,
+  CalendarDays,
   CheckCircle2,
-  Sparkles,
-  LayoutDashboard,
+  ChevronRight,
+  ClipboardCheck,
   Clock3,
-  TrendingUp,
+  FileBarChart,
+  GraduationCap,
+  LayoutDashboard,
+  Library,
+  MessageSquare,
+  Search,
+  ShieldCheck,
   Smartphone,
+  Sparkles,
+  Users,
+  Wallet,
+  X,
+  Zap,
 } from "lucide-react";
 
 const modules = [
   {
-    number: "01",
+    id: 1,
     title: "Student Management",
     description:
-      "Manage student profiles, admission details, documents, class allocation and academic records from one place.",
+      "Manage student profiles, admissions, documents, class allocation and student records from one place.",
     icon: Users,
+    category: "Administration",
     color: "blue",
-    features: [
-      "Student profiles",
-      "Admission records",
-      "Document management",
-      "Class allocation",
-    ],
+    features: ["Student profiles", "Admissions", "Class allocation"],
   },
   {
-    number: "02",
+    id: 2,
     title: "Academics Management",
     description:
-      "Organize academic sessions, classes, sections, subjects and class teachers.",
+      "Organize classes, sections, subjects and academic sessions with a structured workflow.",
     icon: GraduationCap,
+    category: "Academics",
     color: "violet",
-    features: [
-      "Academic sessions",
-      "Classes and sections",
-      "Subject management",
-      "Class teacher assignment",
-    ],
+    features: ["Classes & sections", "Subjects", "Academic sessions"],
   },
   {
-    number: "03",
+    id: 3,
     title: "Attendance Management",
     description:
-      "Record daily attendance and monitor student and staff attendance.",
+      "Record daily attendance, monitor absences and access class-wise attendance reports.",
     icon: ClipboardCheck,
+    category: "Academics",
     color: "emerald",
-    features: [
-      "Daily attendance",
-      "Class-wise records",
-      "Attendance reports",
-      "Staff attendance",
-    ],
+    features: ["Daily attendance", "Absence tracking", "Attendance reports"],
   },
   {
-    number: "04",
+    id: 4,
     title: "Fees & Finance",
     description:
-      "Manage fee structures, student payments, pending dues and payment records.",
+      "Manage fee structures, payments, pending dues and payment receipts with greater clarity.",
     icon: Wallet,
+    category: "Finance",
     color: "amber",
-    features: [
-      "Fee structure",
-      "Payment records",
-      "Pending dues",
-      "Fee receipts",
-    ],
+    features: ["Fee structure", "Payment records", "Due tracking"],
   },
   {
-    number: "05",
+    id: 5,
     title: "Exams & Results",
     description:
-      "Organize examinations, enter marks, calculate results and prepare report cards.",
+      "Organize examinations, enter marks, calculate results and generate student report cards.",
     icon: FileBarChart,
+    category: "Academics",
     color: "rose",
-    features: [
-      "Exam scheduling",
-      "Marks entry",
-      "Result calculation",
-      "Report cards",
-    ],
+    features: ["Exam scheduling", "Marks entry", "Report cards"],
   },
   {
-    number: "06",
+    id: 6,
     title: "Timetable Management",
     description:
-      "Create class timetables and organize subjects, teachers and daily schedules.",
+      "Create class timetables and organize periods, subjects and teacher schedules.",
     icon: CalendarDays,
+    category: "Academics",
     color: "cyan",
-    features: [
-      "Class timetables",
-      "Subject allocation",
-      "Teacher schedules",
-      "Daily periods",
-    ],
+    features: ["Class timetable", "Period planning", "Teacher schedules"],
   },
   {
-    number: "07",
+    id: 7,
     title: "Staff Management",
     description:
-      "Maintain teacher and staff information, responsibilities and staff records.",
-    icon: UserCog,
+      "Maintain staff profiles, manage responsibilities and organize teacher information.",
+    icon: Users,
+    category: "Administration",
     color: "indigo",
-    features: [
-      "Staff profiles",
-      "Teacher allocation",
-      "Staff records",
-      "Role assignment",
-    ],
+    features: ["Staff profiles", "Role management", "Staff records"],
   },
   {
-    number: "08",
+    id: 8,
     title: "Parent & Student Portal",
     description:
-      "Give families access to relevant student information through a shared login experience.",
+      "Give families convenient access to attendance, results, fee details and school updates.",
     icon: Smartphone,
+    category: "Communication",
     color: "teal",
-    features: [
-      "Student dashboard",
-      "Attendance overview",
-      "Results and marks",
-      "Notices and updates",
-    ],
+    features: ["Academic progress", "Fee information", "School updates"],
   },
   {
-    number: "09",
+    id: 9,
     title: "Communication",
     description:
-      "Keep school communication organized with notices and important notifications.",
+      "Share notices, announcements and important school information with the right audience.",
     icon: MessageSquare,
+    category: "Communication",
     color: "orange",
-    features: [
-      "School notices",
-      "Announcements",
-      "Notifications",
-      "Important updates",
-    ],
+    features: ["Notices", "Announcements", "Notifications"],
   },
   {
-    number: "10",
+    id: 10,
     title: "Reports & Analytics",
     description:
-      "Review academic and administrative information through clear reports.",
-    icon: TrendingUp,
+      "Understand school performance with organized reports covering attendance, fees and results.",
+    icon: BarChart3,
+    category: "Reports",
     color: "green",
-    features: [
-      "Student reports",
-      "Attendance summaries",
-      "Fee summaries",
-      "Academic performance",
-    ],
+    features: ["Performance reports", "Fee summaries", "Attendance insights"],
   },
   {
-    number: "11",
+    id: 11,
     title: "Library Management",
     description:
-      "Organize library books and track book issue and return records.",
+      "Maintain book records, track availability and organize library issue and return activities.",
     icon: Library,
+    category: "Administration",
     color: "purple",
-    features: [
-      "Book catalogue",
-      "Issue records",
-      "Return tracking",
-      "Library inventory",
-    ],
+    features: ["Book catalogue", "Issue & return", "Book availability"],
   },
   {
-    number: "12",
+    id: 12,
     title: "Transport Management",
     description:
-      "Maintain school transport details, route information and vehicle assignments.",
+      "Organize transport routes, vehicle details and student transport assignments.",
     icon: Bus,
+    category: "Administration",
     color: "sky",
-    features: [
-      "Route management",
-      "Vehicle records",
-      "Transport allocation",
-      "Transport information",
-    ],
+    features: ["Route management", "Vehicle records", "Student allocation"],
   },
+];
+
+const categories = [
+  "All Modules",
+  "Administration",
+  "Academics",
+  "Finance",
+  "Communication",
+  "Reports",
 ];
 
 const colorStyles = {
   blue: {
-    icon: "bg-blue-50 text-blue-600",
-    number: "text-blue-600",
-    hover: "group-hover:border-blue-200",
+    icon: "bg-blue-50 text-blue-600 ring-blue-100",
+    glow: "group-hover:bg-blue-50",
+    dot: "bg-blue-500",
   },
   violet: {
-    icon: "bg-violet-50 text-violet-600",
-    number: "text-violet-600",
-    hover: "group-hover:border-violet-200",
+    icon: "bg-violet-50 text-violet-600 ring-violet-100",
+    glow: "group-hover:bg-violet-50",
+    dot: "bg-violet-500",
   },
   emerald: {
-    icon: "bg-emerald-50 text-emerald-600",
-    number: "text-emerald-600",
-    hover: "group-hover:border-emerald-200",
+    icon: "bg-emerald-50 text-emerald-600 ring-emerald-100",
+    glow: "group-hover:bg-emerald-50",
+    dot: "bg-emerald-500",
   },
   amber: {
-    icon: "bg-amber-50 text-amber-600",
-    number: "text-amber-600",
-    hover: "group-hover:border-amber-200",
+    icon: "bg-amber-50 text-amber-600 ring-amber-100",
+    glow: "group-hover:bg-amber-50",
+    dot: "bg-amber-500",
   },
   rose: {
-    icon: "bg-rose-50 text-rose-600",
-    number: "text-rose-600",
-    hover: "group-hover:border-rose-200",
+    icon: "bg-rose-50 text-rose-600 ring-rose-100",
+    glow: "group-hover:bg-rose-50",
+    dot: "bg-rose-500",
   },
   cyan: {
-    icon: "bg-cyan-50 text-cyan-600",
-    number: "text-cyan-600",
-    hover: "group-hover:border-cyan-200",
+    icon: "bg-cyan-50 text-cyan-600 ring-cyan-100",
+    glow: "group-hover:bg-cyan-50",
+    dot: "bg-cyan-500",
   },
   indigo: {
-    icon: "bg-indigo-50 text-indigo-600",
-    number: "text-indigo-600",
-    hover: "group-hover:border-indigo-200",
+    icon: "bg-indigo-50 text-indigo-600 ring-indigo-100",
+    glow: "group-hover:bg-indigo-50",
+    dot: "bg-indigo-500",
   },
   teal: {
-    icon: "bg-teal-50 text-teal-600",
-    number: "text-teal-600",
-    hover: "group-hover:border-teal-200",
+    icon: "bg-teal-50 text-teal-600 ring-teal-100",
+    glow: "group-hover:bg-teal-50",
+    dot: "bg-teal-500",
   },
   orange: {
-    icon: "bg-orange-50 text-orange-600",
-    number: "text-orange-600",
-    hover: "group-hover:border-orange-200",
+    icon: "bg-orange-50 text-orange-600 ring-orange-100",
+    glow: "group-hover:bg-orange-50",
+    dot: "bg-orange-500",
   },
   green: {
-    icon: "bg-green-50 text-green-600",
-    number: "text-green-600",
-    hover: "group-hover:border-green-200",
+    icon: "bg-green-50 text-green-600 ring-green-100",
+    glow: "group-hover:bg-green-50",
+    dot: "bg-green-500",
   },
   purple: {
-    icon: "bg-purple-50 text-purple-600",
-    number: "text-purple-600",
-    hover: "group-hover:border-purple-200",
+    icon: "bg-purple-50 text-purple-600 ring-purple-100",
+    glow: "group-hover:bg-purple-50",
+    dot: "bg-purple-500",
   },
   sky: {
-    icon: "bg-sky-50 text-sky-600",
-    number: "text-sky-600",
-    hover: "group-hover:border-sky-200",
+    icon: "bg-sky-50 text-sky-600 ring-sky-100",
+    glow: "group-hover:bg-sky-50",
+    dot: "bg-sky-500",
   },
 };
 
-export default function Modules() {
-  const location = useLocation();
+function SectionHeading({ eyebrow, title, description }) {
+  return (
+    <div className="mx-auto mb-12 max-w-2xl text-center">
+      <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-blue-700">
+        <Sparkles size={14} />
+        {eyebrow}
+      </div>
 
-  useEffect(() => {
-    window.scrollTo({
-      top: 0,
-      left: 0,
-      behavior: "auto",
+      <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
+        {title}
+      </h2>
+
+      <p className="mx-auto mt-5 max-w-xl text-base leading-7 text-slate-500 sm:text-lg">
+        {description}
+      </p>
+    </div>
+  );
+}
+
+function DashboardPreview() {
+  const stats = [
+    {
+      label: "Total Students",
+      value: "1,248",
+      change: "+12%",
+      icon: Users,
+      color: "bg-blue-50 text-blue-600",
+    },
+    {
+      label: "Attendance",
+      value: "94.8%",
+      change: "Today",
+      icon: ClipboardCheck,
+      color: "bg-emerald-50 text-emerald-600",
+    },
+    {
+      label: "Fee Collection",
+      value: "₹8.4L",
+      change: "This month",
+      icon: Wallet,
+      color: "bg-violet-50 text-violet-600",
+    },
+  ];
+
+  const attendance = [58, 76, 64, 88, 70, 94, 82];
+
+  return (
+    <div className="relative mx-auto w-full max-w-xl">
+      <div className="absolute -inset-5 rounded-[2rem] bg-blue-200/30 blur-3xl" />
+
+      <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/10 sm:rounded-3xl">
+        <div className="flex items-center justify-between border-b border-slate-100 px-4 py-4 sm:px-6">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white">
+              <LayoutDashboard size={20} />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-slate-900">
+                School Dashboard
+              </p>
+              <p className="text-xs text-slate-500">Overview & analytics</p>
+            </div>
+          </div>
+
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-50 text-slate-500">
+            <Bell size={17} />
+          </div>
+        </div>
+
+        <div className="space-y-5 p-4 sm:p-6">
+          <div>
+            <p className="text-lg font-bold text-slate-900">
+              Welcome back, Admin!
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              Here is your school&apos;s overview.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            {stats.map((stat) => {
+              const Icon = stat.icon;
+
+              return (
+                <div
+                  key={stat.label}
+                  className="rounded-xl border border-slate-100 p-3 sm:rounded-2xl sm:p-4"
+                >
+                  <div
+                    className={`mb-3 flex h-8 w-8 items-center justify-center rounded-lg ${stat.color}`}
+                  >
+                    <Icon size={16} />
+                  </div>
+                  <p className="text-[10px] text-slate-500 sm:text-xs">
+                    {stat.label}
+                  </p>
+                  <p className="mt-1 text-base font-bold text-slate-900 sm:text-xl">
+                    {stat.value}
+                  </p>
+                  <p className="mt-1 text-[10px] font-medium text-emerald-600 sm:text-xs">
+                    {stat.change}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="rounded-2xl border border-slate-100 p-4 sm:p-5">
+            <div className="mb-5 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold text-slate-900">
+                  Weekly Attendance
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Attendance overview
+                </p>
+              </div>
+              <span className="rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                +8.2%
+              </span>
+            </div>
+
+            <div className="flex h-28 items-end justify-between gap-2">
+              {attendance.map((height, index) => (
+                <div
+                  key={index}
+                  className="flex h-full flex-1 items-end justify-center"
+                >
+                  <div
+                    style={{ height: `${height}%` }}
+                    className={`w-full max-w-10 rounded-t-md transition-all ${
+                      index === 5 ? "bg-blue-600" : "bg-blue-100"
+                    }`}
+                  />
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-3 flex justify-between text-[10px] text-slate-400 sm:text-xs">
+              {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(
+                (day) => (
+                  <span key={day}>{day}</span>
+                )
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 rounded-xl bg-emerald-50 p-3 sm:p-4">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-emerald-600">
+              <CheckCircle2 size={19} />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-slate-800 sm:text-sm">
+                Everything is organized
+              </p>
+              <p className="mt-1 text-[11px] text-slate-500 sm:text-xs">
+                Your school information in one place.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ModuleCard({ module }) {
+  const Icon = module.icon;
+  const styles = colorStyles[module.color] || colorStyles.blue;
+
+  return (
+    <article className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 transition duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-xl hover:shadow-slate-900/5 sm:p-7">
+      <div
+        className={`absolute -right-12 -top-12 h-32 w-32 rounded-full bg-slate-50 transition duration-300 group-hover:scale-150 ${styles.glow}`}
+      />
+
+      <div className="relative flex items-start justify-between gap-4">
+        <div
+          className={`flex h-14 w-14 items-center justify-center rounded-2xl ring-1 transition duration-300 group-hover:scale-105 ${styles.icon}`}
+        >
+          <Icon size={25} strokeWidth={1.8} />
+        </div>
+
+        <span className="rounded-full bg-slate-50 px-3 py-1.5 text-[11px] font-semibold text-slate-500">
+          {module.category}
+        </span>
+      </div>
+
+      <h3 className="relative mt-6 text-lg font-bold tracking-tight text-slate-900">
+        {module.title}
+      </h3>
+
+      <p className="relative mt-3 flex-1 text-sm leading-6 text-slate-500">
+        {module.description}
+      </p>
+
+      <div className="relative mt-5 space-y-2.5 border-t border-slate-100 pt-5">
+        {module.features.map((feature) => (
+          <div
+            key={feature}
+            className="flex items-center gap-2.5 text-xs font-medium text-slate-600"
+          >
+            <CheckCircle2 size={15} className="shrink-0 text-emerald-500" />
+            <span>{feature}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="relative mt-6 flex items-center justify-between border-t border-slate-100 pt-5">
+        <span className="text-xs font-semibold text-slate-400">
+          Module {String(module.id).padStart(2, "0")}
+        </span>
+        <div className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition group-hover:border-blue-600 group-hover:bg-blue-600 group-hover:text-white">
+          <ArrowUpRight size={17} />
+        </div>
+      </div>
+    </article>
+  );
+}
+
+export default function Modules() {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeCategory, setActiveCategory] = useState("All Modules");
+
+  const filteredModules = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+
+    return modules.filter((module) => {
+      const matchesCategory =
+        activeCategory === "All Modules" ||
+        module.category === activeCategory;
+
+      const searchableText = [
+        module.title,
+        module.description,
+        module.category,
+        ...module.features,
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      return matchesCategory && searchableText.includes(query);
     });
-  }, [location.pathname]);
+  }, [searchTerm, activeCategory]);
+
+  const resetFilters = () => {
+    setSearchTerm("");
+    setActiveCategory("All Modules");
+  };
 
   return (
     <main className="min-h-screen overflow-hidden bg-white text-slate-900">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-slate-950 px-5 pb-20 pt-16 text-white sm:px-8 sm:pb-24 sm:pt-20 lg:px-12">
-        <div className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-blue-500/20 blur-3xl" />
+      {/* HERO */}
+      <section className="relative isolate overflow-hidden bg-slate-950">
+        <div className="absolute inset-0 -z-10">
+          <div className="absolute -left-32 -top-32 h-96 w-96 rounded-full bg-blue-600/20 blur-3xl" />
+          <div className="absolute -right-20 top-20 h-96 w-96 rounded-full bg-violet-600/20 blur-3xl" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.08)_1px,transparent_0)] bg-[size:30px_30px]" />
+        </div>
 
-        <div className="pointer-events-none absolute -bottom-40 -left-24 h-96 w-96 rounded-full bg-violet-500/20 blur-3xl" />
-
-        <div className="relative mx-auto max-w-7xl">
-          <div className="mb-8 flex items-center gap-2 text-sm text-slate-300">
-            <Link to="/" className="transition hover:text-white">
-              Home
-            </Link>
-
-            <span>/</span>
-
-            <span className="text-white">Modules</span>
-          </div>
-
-          <div className="mx-auto max-w-4xl text-center">
-            <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-blue-200">
-              <Sparkles size={16} />
-              One Platform. Smarter School Management.
+        <div className="mx-auto grid max-w-7xl items-center gap-14 px-5 py-16 sm:px-8 sm:py-20 lg:grid-cols-2 lg:gap-12 lg:px-10 lg:py-24">
+          <div className="max-w-2xl">
+            <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-4 py-2 text-xs font-semibold text-blue-200">
+              <Sparkles size={15} />
+              ALL-IN-ONE SCHOOL MANAGEMENT
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
             </div>
 
-            <h1 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-7xl">
-              Everything Your School Needs,
-              <span className="mt-2 block bg-gradient-to-r from-blue-300 via-violet-300 to-cyan-300 bg-clip-text text-transparent">
-                All in One Place.
+            <h1 className="text-4xl font-bold leading-[1.12] tracking-tight text-white sm:text-5xl lg:text-6xl">
+              Everything your school needs.
+              <span className="mt-2 block bg-gradient-to-r from-blue-400 via-indigo-300 to-violet-400 bg-clip-text text-transparent">
+                One smart platform.
               </span>
             </h1>
 
-            <p className="mx-auto mt-7 max-w-2xl text-base leading-8 text-slate-300 sm:text-lg">
-              From student records and attendance to fees, examinations and
-              parent communication, EduSchoolHub brings essential school
-              operations together in one organized platform.
+            <p className="mt-6 max-w-xl text-base leading-7 text-slate-300 sm:text-lg sm:leading-8">
+              Simplify daily school operations with connected tools for
+              students, academics, attendance, fees, examinations and
+              communication — all in one place.
             </p>
 
-            <div className="mt-9 flex flex-col items-center justify-center gap-4 sm:flex-row">
+            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
               <Link
                 to="/register"
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-7 py-4 text-sm font-semibold text-white shadow-lg shadow-blue-950/30 transition hover:bg-blue-500 sm:w-auto"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-500"
               >
                 Get Started
-                <ArrowRight size={18} />
+                <ArrowRight size={17} />
               </Link>
 
-              <Link
-                to="/features"
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/20 px-7 py-4 text-sm font-semibold text-white transition hover:bg-white/10 sm:w-auto"
+              <a
+                href="#school-modules"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
               >
-                Explore Features
-                <ArrowUpRight size={18} />
-              </Link>
+                Explore Modules
+                <ChevronRight size={17} />
+              </a>
+            </div>
+
+            <div className="mt-9 flex flex-wrap gap-x-6 gap-y-3 text-xs text-slate-300 sm:text-sm">
+              <span className="flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-emerald-400" />
+                Connected modules
+              </span>
+              <span className="flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-emerald-400" />
+                Easy workflows
+              </span>
+              <span className="flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-emerald-400" />
+                Role-based access
+              </span>
             </div>
           </div>
 
-          <div className="mx-auto mt-16 grid max-w-4xl grid-cols-2 gap-4 sm:grid-cols-4">
+          <DashboardPreview />
+        </div>
+
+        <div className="border-t border-white/10 bg-white/[0.03]">
+          <div className="mx-auto grid max-w-7xl grid-cols-2 gap-5 px-5 py-6 sm:px-8 md:grid-cols-4 lg:px-10">
             {[
-              { value: "12", label: "Core Modules" },
-              { value: "360°", label: "School Overview" },
-              { value: "One", label: "Connected Platform" },
-              { value: "Anytime", label: "Online Access" },
+              { value: "12", label: "Management modules" },
+              { value: "01", label: "Connected platform" },
+              { value: "360°", label: "School overview" },
+              { value: "24/7", label: "Access to information" },
             ].map((item) => (
-              <div
-                key={item.label}
-                className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-center backdrop-blur-sm"
-              >
+              <div key={item.label} className="text-center sm:text-left">
                 <p className="text-2xl font-bold text-white sm:text-3xl">
                   {item.value}
                 </p>
-
-                <p className="mt-2 text-xs text-slate-400 sm:text-sm">
+                <p className="mt-1 text-xs text-slate-400 sm:text-sm">
                   {item.label}
                 </p>
               </div>
@@ -353,265 +562,161 @@ export default function Modules() {
         </div>
       </section>
 
-      {/* Intro Section */}
-      <section className="px-5 py-16 sm:px-8 sm:py-20 lg:px-12">
-        <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-2 lg:gap-16">
-          <div>
-            <span className="text-sm font-bold uppercase tracking-[0.2em] text-blue-600">
-              The EduSchoolHub Ecosystem
-            </span>
+      {/* MODULES */}
+      <section
+        id="school-modules"
+        className="scroll-mt-20 bg-slate-50/70 px-5 py-16 sm:px-8 sm:py-20 lg:px-10 lg:py-24"
+      >
+        <div className="mx-auto max-w-7xl">
+          <SectionHeading
+            eyebrow="Platform Modules"
+            title="A smarter way to manage your school"
+            description="Explore the tools that bring your school's everyday operations together in one organized platform."
+          />
 
-            <h2 className="mt-4 text-3xl font-bold leading-tight tracking-tight sm:text-4xl lg:text-5xl">
-              Simplify daily operations.
-              <span className="block text-slate-400">
-                Focus on better education.
-              </span>
-            </h2>
+          {/* SEARCH AND FILTER */}
+          <div className="mb-8 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="relative w-full lg:max-w-sm">
+                <Search
+                  size={18}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                />
 
-            <p className="mt-6 max-w-xl leading-8 text-slate-600">
-              Managing a school should not mean switching between disconnected
-              records and spreadsheets. EduSchoolHub organizes essential
-              workflows so authorized school teams can access the information
-              they need from one platform.
-            </p>
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Search modules or features..."
+                  aria-label="Search modules"
+                  className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 pl-11 pr-11 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50"
+                />
 
-            <div className="mt-8 space-y-4">
-              {[
-                "Keep school information organized.",
-                "Reduce repetitive administrative work.",
-                "Make academic information easier to access.",
-              ].map((item) => (
-                <div key={item} className="flex items-start gap-3">
-                  <CheckCircle2
-                    size={21}
-                    className="mt-0.5 shrink-0 text-emerald-500"
-                  />
-
-                  <p className="text-sm font-medium text-slate-700 sm:text-base">
-                    {item}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Dashboard Preview */}
-          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4 shadow-2xl shadow-slate-200/70 sm:p-6">
-            <div className="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
-              <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-5">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-white">
-                    <School size={23} />
-                  </div>
-
-                  <div>
-                    <h3 className="font-bold">School Dashboard</h3>
-
-                    <p className="mt-1 text-xs text-slate-500">
-                      Overview of school operations
-                    </p>
-                  </div>
-                </div>
-
-                <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                  Overview
-                </span>
+                {searchTerm && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchTerm("")}
+                    aria-label="Clear search"
+                    className="absolute right-3 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-200 hover:text-slate-700"
+                  >
+                    <X size={16} />
+                  </button>
+                )}
               </div>
 
-              <div className="mt-5 grid grid-cols-2 gap-3">
-                {[
-                  {
-                    label: "Students",
-                    value: "Student records",
-                    icon: Users,
-                    color: "bg-blue-50 text-blue-600",
-                  },
-                  {
-                    label: "Attendance",
-                    value: "Daily tracking",
-                    icon: ClipboardCheck,
-                    color: "bg-emerald-50 text-emerald-600",
-                  },
-                  {
-                    label: "Academics",
-                    value: "Classes & subjects",
-                    icon: BookOpen,
-                    color: "bg-violet-50 text-violet-600",
-                  },
-                  {
-                    label: "Fees",
-                    value: "Payment records",
-                    icon: Wallet,
-                    color: "bg-amber-50 text-amber-600",
-                  },
-                ].map((item) => {
-                  const Icon = item.icon;
+              <div className="flex flex-wrap gap-2">
+                {categories.map((category) => {
+                  const isActive = activeCategory === category;
 
                   return (
-                    <div
-                      key={item.label}
-                      className="rounded-xl border border-slate-100 p-4"
+                    <button
+                      key={category}
+                      type="button"
+                      onClick={() => setActiveCategory(category)}
+                      className={`rounded-xl px-3.5 py-2.5 text-xs font-semibold transition sm:text-sm ${
+                        isActive
+                          ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
+                          : "border border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                      }`}
                     >
-                      <div
-                        className={`mb-4 flex h-10 w-10 items-center justify-center rounded-lg ${item.color}`}
-                      >
-                        <Icon size={20} />
-                      </div>
-
-                      <p className="text-sm font-semibold text-slate-800">
-                        {item.label}
-                      </p>
-
-                      <p className="mt-1 text-xs leading-5 text-slate-500">
-                        {item.value}
-                      </p>
-                    </div>
+                      {category}
+                    </button>
                   );
                 })}
               </div>
+            </div>
 
-              <div className="mt-4 rounded-xl bg-slate-950 p-5 text-white">
-                <div className="flex items-center gap-3">
-                  <LayoutDashboard size={22} className="text-blue-300" />
+            <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4">
+              <p className="text-xs text-slate-500 sm:text-sm">
+                Showing{" "}
+                <span className="font-bold text-slate-900">
+                  {filteredModules.length}
+                </span>{" "}
+                of {modules.length} modules
+              </p>
 
-                  <div>
-                    <p className="text-sm font-semibold">
-                      Connected School Workflows
-                    </p>
-
-                    <p className="mt-1 text-xs text-slate-400">
-                      Organized access to school information
-                    </p>
-                  </div>
-                </div>
-              </div>
+              {(searchTerm || activeCategory !== "All Modules") && (
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="text-xs font-semibold text-blue-600 hover:text-blue-800 sm:text-sm"
+                >
+                  Clear filters
+                </button>
+              )}
             </div>
           </div>
+
+          {/* MODULE GRID */}
+          {filteredModules.length > 0 ? (
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:gap-6">
+              {filteredModules.map((module) => (
+                <ModuleCard key={module.id} module={module} />
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-16 text-center">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
+                <Search size={24} />
+              </div>
+
+              <h3 className="mt-5 text-lg font-bold text-slate-900">
+                No modules found
+              </h3>
+
+              <p className="mt-2 text-sm text-slate-500">
+                Try another keyword or select a different category.
+              </p>
+
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="mt-5 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+              >
+                Reset filters
+              </button>
+            </div>
+          )}
         </div>
       </section>
 
-      {/* Modules Grid */}
-      <section className="bg-slate-50 px-5 py-16 sm:px-8 sm:py-20 lg:px-12">
+      {/* WORKFLOW */}
+      <section className="px-5 py-16 sm:px-8 sm:py-20 lg:px-10 lg:py-24">
         <div className="mx-auto max-w-7xl">
-          <div className="mx-auto mb-12 max-w-2xl text-center">
-            <span className="text-sm font-bold uppercase tracking-[0.2em] text-blue-600">
-              Explore Our Modules
-            </span>
-
-            <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
-              The tools to manage your school
-            </h2>
-
-            <p className="mt-5 leading-7 text-slate-600">
-              Explore the modules designed to organize academic, administrative
-              and communication workflows.
-            </p>
-          </div>
-
-          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-            {modules.map((module) => {
-              const Icon = module.icon;
-              const styles = colorStyles[module.color];
-
-              return (
-                <article
-                  key={module.number}
-                  className={`group flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-6 transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/60 ${styles.hover}`}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div
-                      className={`flex h-12 w-12 items-center justify-center rounded-xl ${styles.icon}`}
-                    >
-                      <Icon size={24} strokeWidth={1.8} />
-                    </div>
-
-                    <span
-                      className={`text-sm font-bold tracking-wider ${styles.number}`}
-                    >
-                      {module.number}
-                    </span>
-                  </div>
-
-                  <h3 className="mt-6 text-xl font-bold tracking-tight text-slate-900">
-                    {module.title}
-                  </h3>
-
-                  <p className="mt-3 flex-1 text-sm leading-7 text-slate-600">
-                    {module.description}
-                  </p>
-
-                  <div className="my-5 border-t border-slate-100" />
-
-                  <ul className="space-y-3">
-                    {module.features.map((feature) => (
-                      <li
-                        key={feature}
-                        className="flex items-center gap-2.5 text-sm text-slate-600"
-                      >
-                        <CheckCircle2
-                          size={16}
-                          className="shrink-0 text-emerald-500"
-                        />
-
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-
-                  <div className="mt-6 flex items-center gap-2 text-sm font-semibold text-slate-900 transition group-hover:text-blue-600">
-                    <span>Part of your school ecosystem</span>
-
-                    <ArrowRight
-                      size={16}
-                      className="transition group-hover:translate-x-1"
-                    />
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section className="px-5 py-16 sm:px-8 sm:py-20 lg:px-12">
-        <div className="mx-auto max-w-7xl">
-          <div className="mx-auto mb-12 max-w-2xl text-center">
-            <span className="text-sm font-bold uppercase tracking-[0.2em] text-blue-600">
-              One Connected System
-            </span>
-
-            <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
-              Designed around school workflows
-            </h2>
-
-            <p className="mt-4 leading-7 text-slate-600">
-              Organize access around the responsibilities of each user.
-            </p>
-          </div>
+          <SectionHeading
+            eyebrow="Simple Workflow"
+            title="Everything works together"
+            description="A clear workflow helps administrators, teachers and families access the information relevant to them."
+          />
 
           <div className="grid gap-5 md:grid-cols-3">
             {[
               {
                 step: "01",
-                title: "School Administration",
+                title: "Manage",
+                subtitle: "School Administration",
                 description:
-                  "Manage academic setup, student records, staff, fees and school-wide information.",
-                icon: Settings,
+                  "Organize students, staff, classes, fees and daily school operations.",
+                icon: LayoutDashboard,
+                color: "bg-blue-50 text-blue-600",
               },
               {
                 step: "02",
-                title: "Teachers & Staff",
+                title: "Track",
+                subtitle: "Academics & Progress",
                 description:
-                  "Access assigned responsibilities and update relevant academic or administrative records.",
-                icon: UserRoundCheck,
+                  "Maintain attendance, timetables, examinations and academic records.",
+                icon: BarChart3,
+                color: "bg-violet-50 text-violet-600",
               },
               {
                 step: "03",
-                title: "Students & Parents",
+                title: "Connect",
+                subtitle: "Parents & Students",
                 description:
-                  "View the relevant student information, attendance, results and school updates.",
-                icon: Users,
+                  "Share relevant results, fee information, notices and school updates.",
+                icon: Smartphone,
+                color: "bg-emerald-50 text-emerald-600",
               },
             ].map((item) => {
               const Icon = item.icon;
@@ -619,19 +724,29 @@ export default function Modules() {
               return (
                 <div
                   key={item.step}
-                  className="rounded-2xl border border-slate-200 p-6 sm:p-8"
+                  className="relative rounded-2xl border border-slate-200 bg-white p-6 transition hover:-translate-y-1 hover:shadow-lg sm:p-8"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-blue-600">
-                      STEP {item.step}
-                    </span>
+                    <div
+                      className={`flex h-12 w-12 items-center justify-center rounded-2xl ${item.color}`}
+                    >
+                      <Icon size={23} />
+                    </div>
 
-                    <Icon size={25} className="text-slate-400" />
+                    <span className="text-3xl font-bold text-slate-100">
+                      {item.step}
+                    </span>
                   </div>
 
-                  <h3 className="mt-6 text-xl font-bold">{item.title}</h3>
+                  <h3 className="mt-7 text-xl font-bold text-slate-900">
+                    {item.title}
+                  </h3>
 
-                  <p className="mt-3 text-sm leading-7 text-slate-600">
+                  <p className="mt-1 text-sm font-semibold text-blue-600">
+                    {item.subtitle}
+                  </p>
+
+                  <p className="mt-4 text-sm leading-7 text-slate-500">
                     {item.description}
                   </p>
                 </div>
@@ -641,118 +756,181 @@ export default function Modules() {
         </div>
       </section>
 
-      {/* Benefits Section */}
-      <section className="bg-slate-950 px-5 py-16 text-white sm:px-8 sm:py-20 lg:px-12">
-        <div className="mx-auto max-w-7xl">
-          <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
-            <div>
-              <span className="text-sm font-bold uppercase tracking-[0.2em] text-blue-300">
-                Built for Better Organization
-              </span>
-
-              <h2 className="mt-4 text-3xl font-bold leading-tight tracking-tight sm:text-4xl lg:text-5xl">
-                Less administrative complexity.
-                <span className="block text-slate-400">
-                  More clarity for your team.
-                </span>
-              </h2>
-
-              <p className="mt-6 max-w-xl leading-8 text-slate-300">
-                Bring your school's essential information into a structured
-                system, with access based on each user's responsibilities.
-              </p>
-
-              <Link
-                to="/features"
-                className="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3.5 text-sm font-bold text-slate-950 transition hover:bg-blue-50"
-              >
-                Discover All Features
-                <ArrowRight size={18} />
-              </Link>
+      {/* BENEFITS */}
+      <section className="bg-slate-50 px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
+        <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-2 lg:gap-20">
+          <div>
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-4 py-2 text-xs font-bold uppercase tracking-wider text-blue-700">
+              <Zap size={14} />
+              Designed for Schools
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+              Less manual work.
+              <span className="mt-1 block text-blue-600">
+                More organized management.
+              </span>
+            </h2>
+
+            <p className="mt-5 max-w-xl text-base leading-7 text-slate-500">
+              Keep important school information organized and make everyday
+              processes easier for your team with a unified management system.
+            </p>
+
+            <div className="mt-8 space-y-5">
               {[
                 {
-                  icon: Clock3,
-                  title: "Organized Workflows",
+                  title: "Centralized information",
                   description:
-                    "Keep everyday school activities structured.",
+                    "Keep school records organized instead of scattered across different files.",
                 },
                 {
-                  icon: ShieldCheck,
-                  title: "Role-Based Access",
+                  title: "Role-based access",
                   description:
-                    "Provide access according to assigned responsibilities.",
+                    "Provide relevant information and tools based on each user's role and permissions.",
                 },
                 {
-                  icon: Bell,
-                  title: "School Updates",
+                  title: "Clearer reporting",
                   description:
-                    "Keep important notices and information accessible.",
+                    "Review attendance, fees and academic information through organized reports.",
                 },
-                {
-                  icon: BookOpen,
-                  title: "Academic Visibility",
-                  description:
-                    "Organize classes, subjects and academic records.",
-                },
-              ].map((item) => {
-                const Icon = item.icon;
+              ].map((item) => (
+                <div key={item.title} className="flex gap-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-emerald-600 shadow-sm ring-1 ring-slate-200">
+                    <CheckCircle2 size={20} />
+                  </div>
 
-                return (
-                  <div
-                    key={item.title}
-                    className="rounded-2xl border border-white/10 bg-white/[0.04] p-5"
-                  >
-                    <Icon size={24} className="text-blue-300" />
-
-                    <h3 className="mt-4 font-bold">{item.title}</h3>
-
-                    <p className="mt-2 text-sm leading-6 text-slate-400">
+                  <div>
+                    <h3 className="font-bold text-slate-900">{item.title}</h3>
+                    <p className="mt-1 text-sm leading-6 text-slate-500">
                       {item.description}
                     </p>
                   </div>
-                );
-              })}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="relative">
+            <div className="absolute -inset-4 rounded-3xl bg-blue-100/70 blur-2xl" />
+
+            <div className="relative overflow-hidden rounded-3xl bg-slate-950 p-6 text-white shadow-xl sm:p-8">
+              <div className="flex items-center justify-between border-b border-white/10 pb-6">
+                <div>
+                  <p className="text-sm font-semibold text-slate-300">
+                    Platform Overview
+                  </p>
+                  <p className="mt-2 text-2xl font-bold">One connected system</p>
+                </div>
+
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-500/20 text-blue-300">
+                  <ShieldCheck size={25} />
+                </div>
+              </div>
+
+              <div className="mt-6 space-y-3">
+                {[
+                  {
+                    icon: Users,
+                    title: "School Administration",
+                    detail: "Students, staff & classes",
+                  },
+                  {
+                    icon: BookOpen,
+                    title: "Academic Management",
+                    detail: "Attendance, exams & results",
+                  },
+                  {
+                    icon: Wallet,
+                    title: "Fees & Finance",
+                    detail: "Payments, dues & records",
+                  },
+                  {
+                    icon: MessageSquare,
+                    title: "Communication",
+                    detail: "Notices & school updates",
+                  },
+                ].map((item) => {
+                  const Icon = item.icon;
+
+                  return (
+                    <div
+                      key={item.title}
+                      className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition hover:bg-white/[0.08]"
+                    >
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/10 text-blue-300">
+                        <Icon size={21} />
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold">{item.title}</p>
+                        <p className="mt-1 text-xs text-slate-400">
+                          {item.detail}
+                        </p>
+                      </div>
+
+                      <CheckCircle2
+                        size={18}
+                        className="shrink-0 text-emerald-400"
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="mt-6 flex items-center gap-3 rounded-2xl bg-blue-600/15 p-4">
+                <Clock3 size={20} className="shrink-0 text-blue-300" />
+                <p className="text-xs leading-5 text-slate-300 sm:text-sm">
+                  Keep everyday school processes organized with a unified
+                  management workflow.
+                </p>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Final CTA */}
-      <section className="px-5 py-16 sm:px-8 sm:py-20 lg:px-12">
-        <div className="mx-auto max-w-5xl overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 px-6 py-12 text-center text-white sm:px-12 sm:py-16">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-white/20 bg-white/10">
-            <School size={28} />
-          </div>
+      {/* CTA */}
+      <section className="px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
+        <div className="relative mx-auto max-w-7xl overflow-hidden rounded-3xl bg-blue-600 px-6 py-12 text-center sm:px-12 sm:py-16 lg:px-20">
+          <div className="absolute -left-24 -top-24 h-64 w-64 rounded-full bg-white/10 blur-2xl" />
+          <div className="absolute -bottom-32 -right-20 h-72 w-72 rounded-full bg-indigo-400/20 blur-2xl" />
 
-          <h2 className="mx-auto mt-6 max-w-3xl text-3xl font-bold leading-tight tracking-tight sm:text-4xl lg:text-5xl">
-            Ready to simplify your school's management?
-          </h2>
+          <div className="relative mx-auto max-w-2xl">
+            <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/20 bg-white/10 text-white">
+              <GraduationCap size={28} />
+            </div>
 
-          <p className="mx-auto mt-5 max-w-2xl leading-7 text-blue-100">
-            Explore EduSchoolHub and discover how connected school management
-            workflows can help your institution stay organized.
-          </p>
+            <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl">
+              Ready to simplify school management?
+            </h2>
 
-          <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <Link
-              to="/register"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-7 py-4 text-sm font-bold text-blue-700 transition hover:bg-blue-50 sm:w-auto"
-            >
-              Get Started
-              <ArrowRight size={18} />
-            </Link>
+            <p className="mx-auto mt-5 max-w-xl text-sm leading-7 text-blue-100 sm:text-base">
+              Explore a more organized way to manage academics, administration
+              and school communication.
+            </p>
 
-            <Link
-              to="/"
-              onClick={() => window.scrollTo(0, 0)}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/30 px-7 py-4 text-sm font-bold text-white transition hover:bg-white/10 sm:w-auto"
-            >
-              Back to Home
-              <ArrowUpRight size={18} />
-            </Link>
+            <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+              <Link
+                to="/register"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-bold text-blue-700 transition hover:bg-blue-50"
+              >
+                Get Started
+                <ArrowRight size={17} />
+              </Link>
+
+              <Link
+                to="/features"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/25 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+              >
+                Explore Features
+                <ArrowUpRight size={17} />
+              </Link>
+            </div>
+
+            <p className="mt-5 text-xs text-blue-100/80">
+              Built to bring your school&apos;s everyday operations together.
+            </p>
           </div>
         </div>
       </section>

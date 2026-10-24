@@ -1,5 +1,6 @@
 
 import { useEffect, useState } from "react";
+import BookDemoForm from "../main-website-components/BookDemoForm";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -268,11 +269,10 @@ function DashboardPreview({ brand }) {
               return (
                 <div
                   key={item.label}
-                  className={`mb-1 flex items-center gap-2 rounded-lg px-2.5 py-2.5 text-[11px] font-medium ${
-                    index === 0
+                  className={`mb-1 flex items-center gap-2 rounded-lg px-2.5 py-2.5 text-[11px] font-medium ${index === 0
                       ? "bg-blue-600 text-white shadow-sm"
                       : "text-slate-500"
-                  }`}
+                    }`}
                 >
                   <Icon size={15} />
                   {item.label}
@@ -488,52 +488,6 @@ export default function Home() {
         className="scroll-mt-24 bg-gradient-to-br from-blue-50 via-white to-indigo-50"
       >
         <div className="mx-auto max-w-7xl px-5 pb-16 pt-10 sm:px-8 sm:pb-20 sm:pt-14 lg:px-10 lg:pb-24 lg:pt-20">
-          <div className="mb-10 flex items-center justify-between lg:hidden">
-            <a
-              href="#home"
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center gap-2.5"
-            >
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white">
-                <School size={21} />
-              </span>
-              <span className="font-extrabold text-slate-900">
-                {content.brand}
-              </span>
-            </a>
-
-            <button
-              type="button"
-              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-              aria-expanded={mobileMenuOpen}
-              onClick={() => setMobileMenuOpen((open) => !open)}
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700"
-            >
-              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
-          </div>
-
-          {mobileMenuOpen && (
-            <nav className="mb-8 grid gap-2 rounded-2xl border border-slate-200 bg-white p-3 lg:hidden">
-              {navigation.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => scrollTo(item.id)}
-                  className="rounded-xl px-4 py-3 text-left text-sm font-semibold text-slate-700 hover:bg-blue-50 hover:text-blue-700"
-                >
-                  {item.label}
-                </button>
-              ))}
-              <button
-                type="button"
-                onClick={() => scrollTo("contact")}
-                className={`${primaryButton} mt-1 w-full`}
-              >
-                Contact Us <ArrowRight size={17} />
-              </button>
-            </nav>
-          )}
 
           <div className="grid items-center gap-14 lg:grid-cols-2 lg:gap-12">
             <div>
@@ -562,7 +516,7 @@ export default function Home() {
 
                 <button
                   type="button"
-                  onClick={() => scrollTo("contact")}
+                  onClick={() => scrollTo("book-demo")}
                   className={`${secondaryButton} w-full sm:w-auto`}
                 >
                   {content.secondaryButton}
@@ -909,11 +863,10 @@ export default function Home() {
             {content.plans?.map((plan, index) => (
               <article
                 key={`${plan.name}-${index}`}
-                className={`relative flex flex-col rounded-2xl border p-6 transition duration-300 hover:-translate-y-1 sm:p-8 ${
-                  plan.popular
+                className={`relative flex flex-col rounded-2xl border p-6 transition duration-300 hover:-translate-y-1 sm:p-8 ${plan.popular
                     ? "border-blue-600 bg-blue-50/50 shadow-xl shadow-blue-600/10"
                     : "border-slate-200 bg-white shadow-sm hover:shadow-lg"
-                }`}
+                  }`}
               >
                 {plan.popular && (
                   <span className="mb-5 inline-flex w-fit rounded-full bg-blue-600 px-3 py-1.5 text-[10px] font-bold tracking-wider text-white">
@@ -961,9 +914,8 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={() => scrollTo("contact")}
-                  className={`mt-8 w-full ${
-                    plan.popular ? primaryButton : secondaryButton
-                  }`}
+                  className={`mt-8 w-full ${plan.popular ? primaryButton : secondaryButton
+                    }`}
                 >
                   Choose {plan.name}
                   <ArrowRight size={17} />
@@ -978,6 +930,42 @@ export default function Home() {
           </p>
         </div>
       </section>
+
+      
+{/* Book a Demo Section */}
+<section
+  id="book-demo"
+  className="scroll-mt-24 bg-gradient-to-b from-blue-50/70 via-white to-indigo-50/70 px-5 py-16 sm:px-8 sm:py-20 lg:px-10"
+>
+  <div className="mx-auto max-w-7xl">
+    <SectionHeading
+      badge="BOOK A FREE DEMO"
+      title="See EduSchoolHub in Action"
+      description="Discover how EduSchoolHub can simplify student management, attendance, fees and academic activities at your school. Book a free demo with our team."
+    />
+
+    <div className="mx-auto mt-10 max-w-2xl rounded-3xl border border-slate-200 bg-white p-5 shadow-xl shadow-blue-950/5 sm:p-8 lg:p-10">
+      <div className="mb-7 border-b border-slate-100 pb-5">
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+            <CalendarCheck size={24} />
+          </div>
+
+          <div>
+            <h3 className="text-lg font-bold text-slate-900">
+              Schedule Your Demo
+            </h3>
+            <p className="mt-1 text-sm text-slate-500">
+              Tell us a little about your school.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <BookDemoForm />
+    </div>
+  </div>
+</section>
 
       {/* Contact CTA */}
       <section
@@ -1015,13 +1003,14 @@ export default function Home() {
                 <ArrowRight size={17} />
               </button>
 
-              <a
-                href="mailto:hello@eduschoolhub.com?subject=EduSchoolHub%20Demo%20Request"
+              <button
+                type="button"
+                onClick={() => scrollTo("book-demo")}
                 className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/30 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
               >
                 Book a Demo
                 <ArrowUpRight size={17} />
-              </a>
+              </button>
             </div>
           </div>
         </div>

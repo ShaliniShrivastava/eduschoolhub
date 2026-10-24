@@ -1,22 +1,21 @@
 
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   ArrowRight,
   ArrowUpRight,
   CheckCircle2,
-  Clock3,
   GraduationCap,
-  Mail,
   MessageCircle,
-  Phone,
   Send,
   ShieldCheck,
   Sparkles,
   Users,
 } from "lucide-react";
 
-const WHATSAPP_NUMBER = ""; // Add number later, e.g. 919876543210
+const WHATSAPP_NUMBER = ""; // Example: 919876543210
+
+const plans = ["Starter", "Professional", "Enterprise"];
 
 const initialForm = {
   fullName: "",
@@ -25,6 +24,8 @@ const initialForm = {
   phone: "",
   role: "",
   studentCount: "",
+  interestedPlan: "",
+  billingCycle: "monthly",
   message: "",
 };
 
@@ -75,10 +76,121 @@ function ContactField({
   );
 }
 
+function SelectField({
+  label,
+  name,
+  value,
+  onChange,
+  error,
+  options,
+  placeholder,
+  optional = false,
+}) {
+  return (
+    <div className="space-y-2">
+      <label
+        htmlFor={name}
+        className="block text-sm font-semibold text-slate-700"
+      >
+        {label}
+        {!optional && <span className="ml-1 text-red-500">*</span>}
+      </label>
+
+      <select
+        id={name}
+        name={name}
+        value={value}
+        onChange={onChange}
+        required={!optional}
+        className={`${inputClass} ${
+          error ? "border-red-400 focus:border-red-500" : ""
+        }`}
+        aria-invalid={Boolean(error)}
+        aria-describedby={error ? `${name}-error` : undefined}
+      >
+        <option value="">{placeholder}</option>
+
+        {options.map(([optionValue, optionLabel]) => (
+          <option key={optionValue} value={optionValue}>
+            {optionLabel}
+          </option>
+        ))}
+      </select>
+
+      {error && (
+        <p id={`${name}-error`} className="text-xs text-red-600">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function InfoCard({ icon, iconClass, title, description }) {
+  return (
+    <div className="flex gap-4 rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
+      <div
+        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${iconClass}`}
+      >
+        {icon}
+      </div>
+
+      <div>
+        <h3 className="font-bold text-slate-900">{title}</h3>
+        <p className="mt-1 text-sm leading-6 text-slate-600">
+          {description}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function Contact() {
+  const [searchParams] = useSearchParams();
+
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState({});
-  const [statusMessage, setStatusMessage] = useState("");
+  const [status, setStatus] = useState({
+    type: "",
+    message: "",
+  });
+
+  // Automatically select plan and billing from Pricing page.
+  useEffect(() => {
+    const requestedPlan = searchParams.get("plan") || "";
+    const requestedBilling = searchParams.get("billing") || "monthly";
+
+    const validPlan = plans.includes(requestedPlan)
+      ? requestedPlan
+      : "";
+
+    const validBilling = [
+      "monthly",
+      "yearly",
+      "custom",
+    ].includes(requestedBilling)
+      ? requestedBilling
+      : "monthly";
+
+    setForm((previous) => ({
+      ...previous,
+      interestedPlan: validPlan,
+      billingCycle: validBilling,
+    }));
+  }, [searchParams]);
+
+  // Scroll to the form when the URL contains #contact-form.
+  useEffect(() => {
+    if (window.location.hash === "#contact-form") {
+      const timer = window.setTimeout(() => {
+        document
+          .getElementById("contact-form")
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+
+      return () => window.clearTimeout(timer);
+    }
+  }, []);
 
   const updateField = (event) => {
     const { name, value } = event.target;
@@ -93,7 +205,7 @@ export default function Contact() {
       [name]: "",
     }));
 
-    setStatusMessage("");
+    setStatus({ type: "", message: "" });
   };
 
   const validateForm = () => {
@@ -101,17 +213,27 @@ export default function Contact() {
 
     if (!form.fullName.trim()) {
       nextErrors.fullName = "Please enter your full name.";
+    } else if (form.fullName.trim().length < 2) {
+      nextErrors.fullName = "Name must contain at least 2 characters.";
     }
 
     if (!form.schoolName.trim()) {
       nextErrors.schoolName = "Please enter your school name.";
     }
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+    if (
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())
+    ) {
       nextErrors.email = "Please enter a valid email address.";
     }
 
-    if (!/^[0-9+\-\s()]{7,20}$/.test(form.phone.trim())) {
+    const phoneDigits = form.phone.replace(/\D/g, "");
+
+    if (
+      !/^[0-9+\-\s()]+$/.test(form.phone.trim()) ||
+      phoneDigits.length < 7 ||
+      phoneDigits.length > 15
+    ) {
       nextErrors.phone = "Please enter a valid phone number.";
     }
 
@@ -120,7 +242,7 @@ export default function Contact() {
     }
 
     if (!form.studentCount) {
-      nextErrors.studentCount = "Please select the student strength.";
+      nextErrors.studentCount = "Please select student strength.";
     }
 
     if (!form.message.trim()) {
@@ -133,21 +255,34 @@ export default function Contact() {
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    setStatusMessage("");
+    setStatus({ type: "", message: "" });
 
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      return;
+    }
 
-    // Frontend only: connect your backend API to save enquiries.
-    setStatusMessage(
-      "Your form is valid! Enquiry submission will work after the backend API is connected."
-    );
+    // Frontend demo only. No data is stored or sent yet.
+    setStatus({
+      type: "demo",
+      message:
+        "Your details passed validation. The enquiry has not been sent or saved yet because the backend API is not connected.",
+    });
   };
 
   const handleWhatsApp = () => {
-    if (!WHATSAPP_NUMBER) return;
+    if (!WHATSAPP_NUMBER) {
+      setStatus({
+        type: "demo",
+        message:
+          "WhatsApp support is not configured yet. Add your official WhatsApp number to enable this feature.",
+      });
+      return;
+    }
 
     const message = encodeURIComponent(
-      "Hi EduSchoolHub! I would like to know more about your school management platform."
+      `Hi EduSchoolHub! I would like to know more about your school management platform.${
+        form.schoolName ? ` School: ${form.schoolName}.` : ""
+      }`
     );
 
     window.open(
@@ -159,7 +294,7 @@ export default function Contact() {
 
   return (
     <main className="overflow-hidden bg-white text-slate-900">
-      {/* Hero */}
+      {/* HERO */}
       <section className="relative isolate overflow-hidden border-b border-slate-100 bg-gradient-to-b from-blue-50 via-white to-white">
         <div className="pointer-events-none absolute -right-24 -top-28 -z-10 h-80 w-80 rounded-full bg-blue-200/40 blur-3xl" />
         <div className="pointer-events-none absolute -left-24 bottom-0 -z-10 h-72 w-72 rounded-full bg-indigo-100/60 blur-3xl" />
@@ -197,13 +332,7 @@ export default function Contact() {
               <button
                 type="button"
                 onClick={handleWhatsApp}
-                disabled={!WHATSAPP_NUMBER}
-                title={
-                  WHATSAPP_NUMBER
-                    ? "Chat with EduSchoolHub on WhatsApp"
-                    : "WhatsApp number will be added soon"
-                }
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-3.5 text-sm font-bold text-slate-700 transition hover:border-green-300 hover:bg-green-50 hover:text-green-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-3.5 text-sm font-bold text-slate-700 transition hover:border-green-300 hover:bg-green-50 hover:text-green-700 sm:w-auto"
               >
                 <MessageCircle size={18} className="text-green-600" />
                 WhatsApp Support
@@ -211,31 +340,29 @@ export default function Contact() {
             </div>
 
             <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-xs font-medium text-slate-500 sm:text-sm">
-              <span className="inline-flex items-center gap-2">
-                <CheckCircle2 size={16} className="text-blue-600" />
-                School-focused solutions
-              </span>
-              <span className="inline-flex items-center gap-2">
-                <CheckCircle2 size={16} className="text-blue-600" />
-                Demo enquiry
-              </span>
-              <span className="inline-flex items-center gap-2">
-                <CheckCircle2 size={16} className="text-blue-600" />
-                Friendly assistance
-              </span>
+              {[
+                "School-focused solutions",
+                "Demo enquiry",
+                "Friendly assistance",
+              ].map((item) => (
+                <span key={item} className="inline-flex items-center gap-2">
+                  <CheckCircle2 size={16} className="text-blue-600" />
+                  {item}
+                </span>
+              ))}
             </div>
           </div>
         </div>
       </section>
 
-      {/* Main Contact Section */}
+      {/* CONTACT FORM */}
       <section
         id="contact-form"
         className="scroll-mt-24 py-16 sm:py-20 lg:py-24"
       >
         <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
           <div className="grid gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:gap-14">
-            {/* Left Information */}
+            {/* LEFT INFORMATION */}
             <div>
               <span className="text-xs font-bold uppercase tracking-[0.18em] text-blue-600">
                 Contact our team
@@ -252,61 +379,26 @@ export default function Contact() {
               </p>
 
               <div className="mt-9 space-y-4">
-                <div className="flex gap-4 rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-700">
-                    <GraduationCap size={23} />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-slate-900">
-                      School-focused guidance
-                    </h3>
-                    <p className="mt-1 text-sm leading-6 text-slate-600">
-                      Tell us about your institution and the way you manage
-                      daily school activities.
-                    </p>
-                  </div>
-                </div>
+                <InfoCard
+                  icon={<GraduationCap size={23} />}
+                  iconClass="bg-blue-100 text-blue-700"
+                  title="School-focused guidance"
+                  description="Tell us about your institution and how you manage daily school activities."
+                />
 
-                <div className="flex gap-4 rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700">
-                    <Users size={22} />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-slate-900">
-                      Find the right solution
-                    </h3>
-                    <p className="mt-1 text-sm leading-6 text-slate-600">
-                      Share your school's size and requirements so your
-                      enquiry has the right context.
-                    </p>
-                  </div>
-                </div>
+                <InfoCard
+                  icon={<Users size={22} />}
+                  iconClass="bg-indigo-100 text-indigo-700"
+                  title="Find the right solution"
+                  description="Share your school's size and requirements so your enquiry has the right context."
+                />
 
-                <div className="flex gap-4 rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-green-100 text-green-700">
-                    <MessageCircle size={22} />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-slate-900">
-                      WhatsApp support
-                    </h3>
-                    <p className="mt-1 text-sm leading-6 text-slate-600">
-                      Our WhatsApp contact will be available here once the
-                      official support number is configured.
-                    </p>
-                    <button
-                      type="button"
-                      disabled={!WHATSAPP_NUMBER}
-                      onClick={handleWhatsApp}
-                      className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-green-700 transition hover:text-green-800 disabled:cursor-not-allowed disabled:text-slate-400"
-                    >
-                      {WHATSAPP_NUMBER
-                        ? "Chat with us"
-                        : "Number coming soon"}
-                      <ArrowUpRight size={15} />
-                    </button>
-                  </div>
-                </div>
+                <InfoCard
+                  icon={<MessageCircle size={22} />}
+                  iconClass="bg-green-100 text-green-700"
+                  title="WhatsApp support"
+                  description="Contact our team through WhatsApp once the official support number is configured."
+                />
               </div>
 
               <div className="mt-6 flex gap-3 rounded-xl border border-blue-100 bg-blue-50/70 p-4">
@@ -316,13 +408,13 @@ export default function Contact() {
                 />
                 <p className="text-sm leading-6 text-slate-600">
                   Please share only the contact details needed for your
-                  enquiry. Student or other sensitive personal information
+                  enquiry. Student-specific or sensitive personal information
                   is not required.
                 </p>
               </div>
             </div>
 
-            {/* Contact Form */}
+            {/* FORM */}
             <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-xl shadow-slate-900/[0.04] sm:p-8 lg:p-9">
               <div className="mb-7">
                 <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700">
@@ -335,8 +427,7 @@ export default function Contact() {
                 </h2>
 
                 <p className="mt-2 text-sm leading-6 text-slate-500">
-                  Fill in the details below. Fields marked with * are
-                  required.
+                  Fill in the details below. Fields marked with * are required.
                 </p>
               </div>
 
@@ -384,74 +475,60 @@ export default function Contact() {
                     error={errors.phone}
                   />
 
-                  <div className="space-y-2">
-                    <label
-                      htmlFor="role"
-                      className="block text-sm font-semibold text-slate-700"
-                    >
-                      Your Role <span className="text-red-500">*</span>
-                    </label>
+                  <SelectField
+                    label="Your Role"
+                    name="role"
+                    value={form.role}
+                    onChange={updateField}
+                    error={errors.role}
+                    placeholder="Select your role"
+                    options={[
+                      ["School Owner", "School Owner"],
+                      ["Principal", "Principal"],
+                      ["School Administrator", "School Administrator"],
+                      ["Teacher", "Teacher"],
+                      ["Other", "Other"],
+                    ]}
+                  />
 
-                    <select
-                      id="role"
-                      name="role"
-                      value={form.role}
-                      onChange={updateField}
-                      required
-                      className={`${inputClass} ${
-                        errors.role ? "border-red-400" : ""
-                      }`}
-                    >
-                      <option value="">Select your role</option>
-                      <option value="School Owner">School Owner</option>
-                      <option value="Principal">Principal</option>
-                      <option value="School Administrator">
-                        School Administrator
-                      </option>
-                      <option value="Teacher">Teacher</option>
-                      <option value="Other">Other</option>
-                    </select>
+                  <SelectField
+                    label="Number of Students"
+                    name="studentCount"
+                    value={form.studentCount}
+                    onChange={updateField}
+                    error={errors.studentCount}
+                    placeholder="Select student strength"
+                    options={[
+                      ["Under 200", "Under 200"],
+                      ["200–500", "200–500"],
+                      ["501–1000", "501–1,000"],
+                      ["1001–2000", "1,001–2,000"],
+                      ["Above 2000", "Above 2,000"],
+                    ]}
+                  />
 
-                    {errors.role && (
-                      <p className="text-xs text-red-600">
-                        {errors.role}
-                      </p>
-                    )}
-                  </div>
+                  <SelectField
+                    label="Interested Plan"
+                    name="interestedPlan"
+                    value={form.interestedPlan}
+                    onChange={updateField}
+                    placeholder="Select a plan (optional)"
+                    optional
+                    options={plans.map((plan) => [plan, plan])}
+                  />
 
-                  <div className="space-y-2">
-                    <label
-                      htmlFor="studentCount"
-                      className="block text-sm font-semibold text-slate-700"
-                    >
-                      Number of Students{" "}
-                      <span className="text-red-500">*</span>
-                    </label>
-
-                    <select
-                      id="studentCount"
-                      name="studentCount"
-                      value={form.studentCount}
-                      onChange={updateField}
-                      required
-                      className={`${inputClass} ${
-                        errors.studentCount ? "border-red-400" : ""
-                      }`}
-                    >
-                      <option value="">Select student strength</option>
-                      <option value="Under 200">Under 200</option>
-                      <option value="200–500">200–500</option>
-                      <option value="501–1000">501–1,000</option>
-                      <option value="1001–2000">1,001–2,000</option>
-                      <option value="Above 2000">Above 2,000</option>
-                    </select>
-
-                    {errors.studentCount && (
-                      <p className="text-xs text-red-600">
-                        {errors.studentCount}
-                      </p>
-                    )}
-                  </div>
+                  <SelectField
+                    label="Billing Preference"
+                    name="billingCycle"
+                    value={form.billingCycle}
+                    onChange={updateField}
+                    placeholder="Select billing preference"
+                    options={[
+                      ["monthly", "Monthly"],
+                      ["yearly", "Yearly"],
+                      ["custom", "Custom / Discuss with team"],
+                    ]}
+                  />
 
                   <div className="space-y-2 sm:col-span-2">
                     <label
@@ -474,22 +551,30 @@ export default function Contact() {
                         errors.message ? "border-red-400" : ""
                       }`}
                       aria-invalid={Boolean(errors.message)}
+                      aria-describedby={
+                        errors.message ? "message-error" : undefined
+                      }
                     />
 
                     {errors.message && (
-                      <p className="text-xs text-red-600">
+                      <p id="message-error" className="text-xs text-red-600">
                         {errors.message}
                       </p>
                     )}
                   </div>
                 </div>
 
-                {statusMessage && (
+                {status.message && (
                   <div
                     role="status"
-                    className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900"
+                    aria-live="polite"
+                    className={`mt-5 rounded-xl border p-4 text-sm leading-6 ${
+                      status.type === "success"
+                        ? "border-green-200 bg-green-50 text-green-800"
+                        : "border-amber-200 bg-amber-50 text-amber-900"
+                    }`}
                   >
-                    {statusMessage}
+                    {status.message}
                   </div>
                 )}
 
@@ -505,8 +590,8 @@ export default function Contact() {
                 </button>
 
                 <p className="mt-4 text-center text-xs leading-5 text-slate-400">
-                  Submitting this form will not send your details until the
-                  backend enquiry API is connected.
+                  This form is currently a frontend demo. Enquiries will not
+                  be saved until the backend API is connected.
                 </p>
               </form>
             </div>
@@ -514,7 +599,7 @@ export default function Contact() {
         </div>
       </section>
 
-      {/* Closing CTA */}
+      {/* CLOSING CTA */}
       <section className="px-5 pb-16 sm:px-8 sm:pb-20 lg:px-10">
         <div className="mx-auto max-w-7xl overflow-hidden rounded-3xl bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700 px-6 py-10 text-center text-white sm:px-12 sm:py-14">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-white/20 bg-white/10">
