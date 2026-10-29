@@ -11,25 +11,27 @@ export default function GoogleLoginButton({
         disabled ? "pointer-events-none opacity-50" : ""
       }`}
     >
-      <GoogleLogin
-        onSuccess={(credentialResponse) => {
-          if (!credentialResponse.credential) {
-            onError?.("Google did not return a valid credential.");
-            return;
-          }
+     <GoogleLogin
+  onSuccess={(credentialResponse) => {
+    if (!credentialResponse.credential) {
+      onError?.("Google did not return a valid credential.");
+      return;
+    }
 
-          onCredential(credentialResponse.credential);
-        }}
-        onError={() => {
-          onError?.("Google sign-in was cancelled or failed.");
-        }}
-        useOneTap={false}
-        text="continue_with"
-        shape="rectangular"
-        size="large"
-        width="320"
-        theme="outline"
-      />
+    onCredential(credentialResponse.credential);
+  }}
+  onError={() => {
+    onError?.("Google sign-in was cancelled or failed.");
+  }}
+  auto_select={false}
+  useOneTap={false}
+  ux_mode="popup"
+  text="continue_with"
+  shape="rectangular"
+  size="large"
+  width="320"
+  theme="outline"
+/>
     </div>
   );
 }
