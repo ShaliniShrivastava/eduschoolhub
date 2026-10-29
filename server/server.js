@@ -1,3 +1,4 @@
+
 require("dotenv").config();
 
 const express = require("express");
@@ -23,22 +24,38 @@ app.use(
     crossOriginOpenerPolicy: {
       policy: "same-origin-allow-popups",
     },
-  }),
+  })
 );
 
-const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
+// CORS configuration for deployed and local frontends
+const allowedOrigins = (
+  process.env.CLIENT_URL || "http://localhost:5173"
+)
+  .split(",")
+  .map((origin) => origin.trim().replace(/\/+$/, ""))
+  .filter(Boolean);
 
 app.use(
   cors({
-    origin: CLIENT_URL,
+    origin(origin, callback) {
+      const normalizedOrigin = origin?.replace(/\/+$/, "");
+
+      if (!origin || allowedOrigins.includes(normalizedOrigin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
-  }),
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
 );
 
 app.use(express.json({ limit: "10kb" }));
 app.use(cookieParser());
 
-// Health endpoint — database check se independent
+// Health endpoint
 app.get("/api/health", (req, res) => {
   return res.status(200).json({
     success: true,
@@ -77,7 +94,7 @@ const ensureDBConnection = async (req, res, next) => {
   }
 };
 
-// Ensure database is connected before API routes
+// Ensure database connection before API routes
 app.use("/api/auth", ensureDBConnection);
 app.use("/api/superadmin", ensureDBConnection);
 app.use("/api/google-auth", ensureDBConnection);
@@ -106,7 +123,7 @@ app.use("/api/contact", contactRoutes);
 // Export Express app for Vercel
 module.exports = app;
 
-// Run a normal server locally
+// Run local server
 if (require.main === module) {
   const PORT = process.env.PORT || 5000;
 
