@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import BookDemoForm from "../main-website-components/BookDemoForm";
 import {
@@ -8,7 +7,9 @@ import {
   CalendarCheck,
   Check,
   CheckCircle2,
+  ChevronLeft,
   ChevronRight,
+  Megaphone,
   ClipboardCheck,
   GraduationCap,
   LayoutDashboard,
@@ -177,6 +178,192 @@ const iconMap = {
   "✉": Bell,
 };
 
+const bannerSlides = [
+  {
+    eyebrow: "SMART SCHOOL MANAGEMENT",
+    title: "One Platform. Every School Need.",
+    description:
+      "Manage students, staff, fees, attendance and academic activities through one organized platform.",
+    button: "Explore Features",
+    target: "features",
+    image:
+      "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=1800&q=85",
+  },
+  {
+    eyebrow: "SIMPLIFY YOUR DAILY WORK",
+    title: "Make School Management Simpler.",
+    description:
+      "Bring everyday school operations together with smarter digital workflows.",
+    button: "Explore Modules",
+    target: "modules",
+    image:
+      "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=1800&q=85",
+  },
+  {
+    eyebrow: "DISCOVER EDUSCHOOLHUB",
+    title: "The Right Tools for Modern Schools.",
+    description:
+      "Explore a connected platform for school administrators, teachers and families.",
+    button: "Book a Demo",
+    target: "book-demo",
+    image:
+      "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1800&q=85",
+  },
+];
+
+const latestNews = [
+  "Welcome to EduSchoolHub — your connected school management platform.",
+  "Explore features for attendance, examinations, fees and student records.",
+  "Want to see EduSchoolHub in action? Book a demo with our team.",
+];
+
+function BannerCarousel({ onNavigate }) {
+  const [active, setActive] = useState(0);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setActive((current) => (current + 1) % bannerSlides.length);
+    }, 5000);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const previous = () =>
+    setActive(
+      (current) => (current - 1 + bannerSlides.length) % bannerSlides.length
+    );
+
+  const next = () =>
+    setActive((current) => (current + 1) % bannerSlides.length);
+
+  const slide = bannerSlides[active];
+
+  return (
+    <section
+      aria-label="EduSchoolHub featured banners"
+      className="px-4 pt-5 sm:px-8 lg:px-10"
+    >
+      <div className="relative mx-auto max-w-7xl overflow-hidden rounded-3xl bg-slate-900 shadow-xl">
+        {bannerSlides.map((item, index) => (
+          <div
+            key={item.title}
+            aria-hidden={index !== active}
+            className={`absolute inset-0 bg-cover bg-center transition-opacity duration-700 ${
+              index === active ? "opacity-100" : "opacity-0"
+            }`}
+            style={{ backgroundImage: `url("${item.image}")` }}
+          />
+        ))}
+
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/65 to-slate-950/15" />
+
+        <div
+          key={active}
+          className="relative flex min-h-[390px] items-center px-6 py-14 sm:min-h-[450px] sm:px-12 lg:min-h-[490px] lg:px-16"
+        >
+          <div className="max-w-2xl text-white">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-2 text-[10px] font-bold tracking-[0.16em] sm:text-xs">
+              <Sparkles size={14} />
+              {slide.eyebrow}
+            </span>
+
+            <h2 className="mt-6 text-3xl leading-tight font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
+              {slide.title}
+            </h2>
+
+            <p className="mt-5 max-w-xl text-sm leading-7 text-white/85 sm:text-base sm:leading-8">
+              {slide.description}
+            </p>
+
+            <button
+              type="button"
+              onClick={() => onNavigate(slide.target)}
+              className="mt-7 inline-flex min-h-12 items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-blue-500"
+            >
+              {slide.button}
+              <ArrowRight size={18} />
+            </button>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          aria-label="Previous banner"
+          onClick={previous}
+          className="absolute left-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/25 text-white backdrop-blur transition hover:bg-black/50 sm:left-5 sm:h-12 sm:w-12"
+        >
+          <ChevronLeft size={23} />
+        </button>
+
+        <button
+          type="button"
+          aria-label="Next banner"
+          onClick={next}
+          className="absolute right-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/25 text-white backdrop-blur transition hover:bg-black/50 sm:right-5 sm:h-12 sm:w-12"
+        >
+          <ChevronRight size={23} />
+        </button>
+
+        <div className="absolute bottom-5 left-0 right-0 z-10 flex justify-center gap-2">
+          {bannerSlides.map((item, index) => (
+            <button
+              key={item.title}
+              type="button"
+              aria-label={`Show banner ${index + 1}`}
+              aria-current={active === index ? "true" : undefined}
+              onClick={() => setActive(index)}
+              className={`h-2.5 rounded-full transition-all ${
+                active === index
+                  ? "w-8 bg-white"
+                  : "w-2.5 bg-white/50 hover:bg-white/80"
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function LatestNewsMarquee() {
+  return (
+    <section
+      aria-label="Latest EduSchoolHub news"
+      className="px-4 pt-4 sm:px-8 lg:px-10"
+    >
+      <div className="mx-auto flex max-w-7xl items-center gap-3 overflow-hidden rounded-xl border border-blue-100 bg-blue-50 px-3 py-3 sm:px-5">
+        <div className="flex shrink-0 items-center gap-2 rounded-lg bg-blue-600 px-2.5 py-2 text-white sm:px-3">
+          <Megaphone size={16} />
+          <span className="text-[10px] font-extrabold tracking-wider sm:text-xs">
+            LATEST NEWS
+          </span>
+        </div>
+
+        <div className="min-w-0 flex-1 overflow-hidden text-sm font-medium text-slate-700">
+          <marquee
+            direction="left"
+            behavior="scroll"
+            scrollAmount={5}
+            onMouseEnter={(event) => event.currentTarget.stop()}
+            onMouseLeave={(event) => event.currentTarget.start()}
+            aria-label="Scrolling latest news"
+          >
+            {latestNews.map((news, index) => (
+              <span
+                key={news}
+                className="mx-5 inline-flex items-center gap-3"
+              >
+                {index > 0 && <span className="text-blue-500">◆</span>}
+                <span>{news}</span>
+              </span>
+            ))}
+          </marquee>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function SectionBadge({ children }) {
   return (
     <span className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3.5 py-2 text-[11px] font-bold tracking-[0.12em] text-blue-700 sm:text-xs">
@@ -190,7 +377,9 @@ function SectionHeading({ badge, title, description }) {
   return (
     <div className="mx-auto max-w-2xl text-center">
       <SectionBadge>{badge}</SectionBadge>
+
       <h2 className={`${sectionTitle} mt-5`}>{title}</h2>
+
       {description && (
         <p className="mt-4 text-sm leading-7 text-slate-600 sm:text-base">
           {description}
@@ -269,10 +458,11 @@ function DashboardPreview({ brand }) {
               return (
                 <div
                   key={item.label}
-                  className={`mb-1 flex items-center gap-2 rounded-lg px-2.5 py-2.5 text-[11px] font-medium ${index === 0
+                  className={`mb-1 flex items-center gap-2 rounded-lg px-2.5 py-2.5 text-[11px] font-medium ${
+                    index === 0
                       ? "bg-blue-600 text-white shadow-sm"
                       : "text-slate-500"
-                    }`}
+                  }`}
                 >
                   <Icon size={15} />
                   {item.label}
@@ -282,9 +472,11 @@ function DashboardPreview({ brand }) {
 
             <div className="mt-5 rounded-xl border border-blue-100 bg-white p-3">
               <ShieldCheck size={20} className="text-blue-600" />
+
               <p className="mt-2 text-xs font-bold text-slate-800">
                 Role-based access
               </p>
+
               <p className="mt-1 text-[10px] leading-4 text-slate-500">
                 Relevant tools for each user.
               </p>
@@ -297,9 +489,11 @@ function DashboardPreview({ brand }) {
                 <p className="text-xs font-medium text-blue-600">
                   SCHOOL OVERVIEW
                 </p>
+
                 <h3 className="mt-1.5 text-lg font-extrabold text-slate-900">
                   Your school, organized.
                 </h3>
+
                 <p className="mt-1 text-xs leading-5 text-slate-500">
                   Manage essential activities in one place.
                 </p>
@@ -325,9 +519,11 @@ function DashboardPreview({ brand }) {
                     >
                       <Icon size={18} />
                     </div>
+
                     <p className="mt-3 text-xs font-bold text-slate-800">
                       {item.title}
                     </p>
+
                     <p className="mt-1 text-[10px] text-slate-500">
                       {item.text}
                     </p>
@@ -342,10 +538,12 @@ function DashboardPreview({ brand }) {
                   <p className="text-sm font-bold text-slate-900">
                     Academic workflow
                   </p>
+
                   <p className="mt-1 text-xs text-slate-500">
                     From daily records to results
                   </p>
                 </div>
+
                 <Layers3 size={20} className="text-blue-600" />
               </div>
 
@@ -362,14 +560,17 @@ function DashboardPreview({ brand }) {
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-emerald-600 shadow-sm">
                       <CheckCircle2 size={17} />
                     </div>
+
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-semibold text-slate-800">
                         {title}
                       </p>
+
                       <p className="mt-1 text-[10px] text-slate-500">
                         {text}
                       </p>
                     </div>
+
                     <ChevronRight size={16} className="text-slate-400" />
                   </div>
                 ))}
@@ -383,10 +584,12 @@ function DashboardPreview({ brand }) {
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
           <Check size={21} />
         </div>
+
         <div>
           <p className="text-xs font-bold text-slate-900">
             One connected platform
           </p>
+
           <p className="mt-1 text-[11px] text-slate-500">
             Simplify everyday tasks
           </p>
@@ -481,20 +684,26 @@ export default function Home() {
   ];
 
   return (
-    <main className="min-h-screen overflow-hidden bg-white text-slate-800">
-      {/* Hero */}
-      <section
-        id="home"
-        className="scroll-mt-24 bg-gradient-to-br from-blue-50 via-white to-indigo-50"
-      >
-        <div className="mx-auto max-w-7xl px-5 pb-16 pt-10 sm:px-8 sm:pb-20 sm:pt-14 lg:px-10 lg:pb-24 lg:pt-20">
+    <main
+      id="home"
+      className="min-h-screen overflow-hidden bg-white text-slate-800"
+    >
+      {/* Homepage banner slider */}
+      <BannerCarousel onNavigate={scrollTo} />
 
+      {/* Latest news ticker directly below the banners */}
+      <LatestNewsMarquee />
+
+      {/* Main platform introduction */}
+      <section className="scroll-mt-24 bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+        <div className="mx-auto max-w-7xl px-5 pb-16 pt-10 sm:px-8 sm:pb-20 sm:pt-14 lg:px-10 lg:pb-24 lg:pt-20">
           <div className="grid items-center gap-14 lg:grid-cols-2 lg:gap-12">
             <div>
               <SectionBadge>{content.tagline}</SectionBadge>
 
               <h1 className="mt-7 max-w-2xl text-4xl leading-[1.13] font-extrabold tracking-tight text-slate-950 sm:text-5xl lg:text-[58px]">
                 {content.title}
+
                 <span className="mt-2 block bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text pb-1 text-transparent">
                   {content.highlight}
                 </span>
@@ -543,6 +752,7 @@ export default function Home() {
                     <strong className="block text-lg font-extrabold text-slate-900 sm:text-2xl">
                       {stat.value}
                     </strong>
+
                     <span className="mt-1.5 block text-[10px] leading-5 text-slate-500 sm:text-xs">
                       {stat.label}
                     </span>
@@ -586,10 +796,12 @@ export default function Home() {
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
                   <Icon size={23} />
                 </div>
+
                 <div>
                   <h3 className="text-sm font-bold text-slate-900">
                     {item.title}
                   </h3>
+
                   <p className="mt-1 text-xs leading-5 text-slate-500 sm:text-sm">
                     {item.description}
                   </p>
@@ -635,6 +847,7 @@ export default function Home() {
 
                   <div className="mt-5 flex items-center gap-2 text-xs font-semibold text-blue-600">
                     Explore the platform
+
                     <ArrowRight
                       size={15}
                       className="transition-transform group-hover:translate-x-1"
@@ -688,8 +901,12 @@ export default function Home() {
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-sm font-bold text-white">
                     {step.number}
                   </div>
+
                   <div>
-                    <h3 className="font-bold text-slate-900">{step.title}</h3>
+                    <h3 className="font-bold text-slate-900">
+                      {step.title}
+                    </h3>
+
                     <p className="mt-2 text-sm leading-6 text-slate-600">
                       {step.description}
                     </p>
@@ -705,10 +922,12 @@ export default function Home() {
                 <p className="text-xs font-bold tracking-wider text-blue-600">
                   ACADEMIC WORKFLOW
                 </p>
+
                 <h3 className="mt-2 text-xl font-extrabold text-slate-900">
                   From Records to Results
                 </h3>
               </div>
+
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
                 <GraduationCap size={25} />
               </div>
@@ -751,19 +970,23 @@ export default function Home() {
                       >
                         <Icon size={21} />
                       </div>
+
                       <div className="min-w-0 flex-1">
                         <h4 className="text-sm font-bold text-slate-900">
                           {item.title}
                         </h4>
+
                         <p className="mt-1 text-xs text-slate-500">
                           {item.description}
                         </p>
                       </div>
+
                       <CheckCircle2
                         size={18}
                         className="shrink-0 text-emerald-500"
                       />
                     </div>
+
                     {index < 3 && (
                       <div className="ml-9 h-3 border-l-2 border-dashed border-slate-200" />
                     )}
@@ -804,6 +1027,7 @@ export default function Home() {
                     <h3 className="font-bold text-slate-900">
                       {module.title}
                     </h3>
+
                     <p className="mt-2 text-sm leading-6 text-slate-600">
                       {module.description}
                     </p>
@@ -831,12 +1055,14 @@ export default function Home() {
               description="Manage students, teachers, classes, attendance, fees and academic operations."
               tone="bg-blue-50 text-blue-600"
             />
+
             <PortalCard
               icon={GraduationCap}
               title="Teacher Portal"
               description="Access assigned classes, record attendance and manage student assessments."
               tone="bg-violet-50 text-violet-600"
             />
+
             <PortalCard
               icon={UserRound}
               title="Parent & Student"
@@ -863,10 +1089,11 @@ export default function Home() {
             {content.plans?.map((plan, index) => (
               <article
                 key={`${plan.name}-${index}`}
-                className={`relative flex flex-col rounded-2xl border p-6 transition duration-300 hover:-translate-y-1 sm:p-8 ${plan.popular
+                className={`relative flex flex-col rounded-2xl border p-6 transition duration-300 hover:-translate-y-1 sm:p-8 ${
+                  plan.popular
                     ? "border-blue-600 bg-blue-50/50 shadow-xl shadow-blue-600/10"
                     : "border-slate-200 bg-white shadow-sm hover:shadow-lg"
-                  }`}
+                }`}
               >
                 {plan.popular && (
                   <span className="mb-5 inline-flex w-fit rounded-full bg-blue-600 px-3 py-1.5 text-[10px] font-bold tracking-wider text-white">
@@ -877,6 +1104,7 @@ export default function Home() {
                 <h3 className="text-xl font-extrabold text-slate-900">
                   {plan.name}
                 </h3>
+
                 <p className="mt-2 text-sm leading-6 text-slate-600">
                   {plan.description}
                 </p>
@@ -885,6 +1113,7 @@ export default function Home() {
                   <span className="text-4xl font-extrabold tracking-tight text-slate-950">
                     {plan.price}
                   </span>
+
                   <span className="text-sm text-slate-500">
                     {plan.period}
                   </span>
@@ -906,6 +1135,7 @@ export default function Home() {
                         size={18}
                         className="mt-0.5 shrink-0 text-emerald-600"
                       />
+
                       <span>{item}</span>
                     </li>
                   ))}
@@ -914,8 +1144,9 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={() => scrollTo("contact")}
-                  className={`mt-8 w-full ${plan.popular ? primaryButton : secondaryButton
-                    }`}
+                  className={`mt-8 w-full ${
+                    plan.popular ? primaryButton : secondaryButton
+                  }`}
                 >
                   Choose {plan.name}
                   <ArrowRight size={17} />
@@ -931,41 +1162,41 @@ export default function Home() {
         </div>
       </section>
 
-      
-{/* Book a Demo Section */}
-<section
-  id="book-demo"
-  className="scroll-mt-24 bg-gradient-to-b from-blue-50/70 via-white to-indigo-50/70 px-5 py-16 sm:px-8 sm:py-20 lg:px-10"
->
-  <div className="mx-auto max-w-7xl">
-    <SectionHeading
-      badge="BOOK A FREE DEMO"
-      title="See EduSchoolHub in Action"
-      description="Discover how EduSchoolHub can simplify student management, attendance, fees and academic activities at your school. Book a free demo with our team."
-    />
+      {/* Book a Demo Section */}
+      <section
+        id="book-demo"
+        className="scroll-mt-24 bg-gradient-to-b from-blue-50/70 via-white to-indigo-50/70 px-5 py-16 sm:px-8 sm:py-20 lg:px-10"
+      >
+        <div className="mx-auto max-w-7xl">
+          <SectionHeading
+            badge="BOOK A FREE DEMO"
+            title="See EduSchoolHub in Action"
+            description="Discover how EduSchoolHub can simplify student management, attendance, fees and academic activities at your school. Book a free demo with our team."
+          />
 
-    <div className="mx-auto mt-10 max-w-2xl rounded-3xl border border-slate-200 bg-white p-5 shadow-xl shadow-blue-950/5 sm:p-8 lg:p-10">
-      <div className="mb-7 border-b border-slate-100 pb-5">
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-            <CalendarCheck size={24} />
-          </div>
+          <div className="mx-auto mt-10 max-w-2xl rounded-3xl border border-slate-200 bg-white p-5 shadow-xl shadow-blue-950/5 sm:p-8 lg:p-10">
+            <div className="mb-7 border-b border-slate-100 pb-5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                  <CalendarCheck size={24} />
+                </div>
 
-          <div>
-            <h3 className="text-lg font-bold text-slate-900">
-              Schedule Your Demo
-            </h3>
-            <p className="mt-1 text-sm text-slate-500">
-              Tell us a little about your school.
-            </p>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">
+                    Schedule Your Demo
+                  </h3>
+
+                  <p className="mt-1 text-sm text-slate-500">
+                    Tell us a little about your school.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <BookDemoForm />
           </div>
         </div>
-      </div>
-
-      <BookDemoForm />
-    </div>
-  </div>
-</section>
+      </section>
 
       {/* Contact CTA */}
       <section
