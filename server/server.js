@@ -1,4 +1,3 @@
-
 require("dotenv").config();
 
 const express = require("express");
@@ -24,13 +23,11 @@ app.use(
     crossOriginOpenerPolicy: {
       policy: "same-origin-allow-popups",
     },
-  })
+  }),
 );
 
 // CORS configuration for deployed and local frontends
-const allowedOrigins = (
-  process.env.CLIENT_URL || "http://localhost:5173"
-)
+const allowedOrigins = (process.env.CLIENT_URL || "http://localhost:5173")
   .split(",")
   .map((origin) => origin.trim().replace(/\/+$/, ""))
   .filter(Boolean);
@@ -49,7 +46,7 @@ app.use(
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-  })
+  }),
 );
 
 app.use(express.json({ limit: "10kb" }));
@@ -135,9 +132,11 @@ if (require.main === module) {
 
       await connectDB();
 
-      app.listen(PORT, () => {
-        console.log(`EduSchoolHub server running on port ${PORT}`);
-      });
+      if (process.env.NODE_ENV !== "production") {
+        app.listen(PORT, () => {
+          console.log(`Server running on port ${PORT}`);
+        });
+      }
     } catch (error) {
       console.error("Server startup failed:", error.message);
       process.exitCode = 1;
