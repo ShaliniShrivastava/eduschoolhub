@@ -10,7 +10,8 @@ const {
 
 const { verifyGoogleIdToken } = require("../services/googleAuthService");
 
-const MAX_ATTEMPTS = 5;
+const MAX_ATTEMPTS = Infinity;
+// const MAX_ATTEMPTS = 5;
 const LOCK_TIME = 15 * 60 * 1000;
 const OTP_EXPIRY = 10 * 60 * 1000;
 const OTP_MAX_ATTEMPTS = 5;
@@ -265,6 +266,13 @@ const superAdminLogin = async (req, res) => {
       email: email.trim().toLowerCase(),
       role: "superAdmin",
     }).select("+password");
+//debugging info for super admin login
+    console.log("[SUPER ADMIN DEBUG]", {
+  userFound: Boolean(user),
+  passwordHashExists: Boolean(user?.password),
+  role: user?.role ?? null,
+  isActive: user?.isActive ?? null,
+});
 
     if (!user || !user.password) {
       return sendInvalidCredentials(res);
@@ -278,6 +286,12 @@ const superAdminLogin = async (req, res) => {
     }
 
     const verification = await verifyPassword(user, password);
+    //verification debug info for super admin login
+console.log("[PASSWORD DEBUG]", {
+  valid: verification.valid,
+  locked: verification.locked,
+  attemptsRemaining: verification.attemptsRemaining,
+});
 
     if (verification.locked) {
       return res.status(423).json({
