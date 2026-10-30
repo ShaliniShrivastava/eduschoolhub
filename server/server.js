@@ -60,6 +60,14 @@ app.get("/api/health", (req, res) => {
   });
 });
 
+// Root endpoint
+app.get("/", (req, res) => {
+  return res.status(200).json({
+    success: true,
+    message: "EduSchoolHub Backend is running",
+  });
+});
+
 // Database connection cache for Vercel
 let dbConnectionPromise;
 
