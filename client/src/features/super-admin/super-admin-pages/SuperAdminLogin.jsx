@@ -2,11 +2,13 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import GoogleLoginButton from "../../../common-components/shared-components/GoogleLoginButton";
 import authService from "../../auth/auth-services/authService";
+import { useAuth } from "../../../app-context/AuthContext";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 export default function SuperAdminLogin() {
   const navigate = useNavigate();
+  const { setUser } = useAuth();
 
   const [form, setForm] = useState({
     email: "",
@@ -68,6 +70,7 @@ export default function SuperAdminLogin() {
         throw new Error("Super Admin access is required.");
       }
 
+      setUser(result.user);
       navigate("/super-admin/dashboard", { replace: true });
     } catch (err) {
       setError(
@@ -92,6 +95,7 @@ export default function SuperAdminLogin() {
         throw new Error("Super Admin access is required.");
       }
 
+      setUser(result.user);
       navigate("/super-admin/dashboard", { replace: true });
     } catch (err) {
       setError(
