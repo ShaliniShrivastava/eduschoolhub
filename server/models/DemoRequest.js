@@ -1,4 +1,3 @@
-
 const mongoose = require("mongoose");
 
 const demoRequestSchema = new mongoose.Schema(
@@ -29,9 +28,20 @@ const demoRequestSchema = new mongoose.Schema(
       maxlength: 20,
     },
     studentCount: {
-      type: Number,
+      type: String,
       required: true,
-      min: 1,
+      trim: true,
+    },
+    role: {
+      type: String,
+      trim: true,
+      default: "",
+      maxlength: 50,
+    },
+    preference: {
+      type: String,
+      enum: ["Online", "Offline", ""],
+      default: "Online",
     },
     preferredDate: {
       type: Date,
@@ -67,7 +77,7 @@ const demoRequestSchema = new mongoose.Schema(
       default: false,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 module.exports =

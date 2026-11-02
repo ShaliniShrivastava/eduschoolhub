@@ -9,19 +9,27 @@ async function createDemoRequest(req, res) {
     const {
       schoolName,
       contactName,
+      contactPerson,
       email,
       phone,
       studentCount,
+      studentStrength,
+      role = "",
+      preference = "Online",
       preferredDate,
-      preferredTime,
-      message,
+      preferredTime = "",
+      message = "",
     } = req.body;
+
+    const finalContactName = contactName || contactPerson;
+    const finalStudentCount = studentCount || studentStrength;
 
     if (
       !schoolName?.trim() ||
-      !contactName?.trim() ||
+      !finalContactName?.trim() ||
       !email?.trim() ||
-      !phone?.trim()
+      !phone?.trim() ||
+      !finalStudentCount?.trim()
     ) {
       return res.status(400).json({
         success: false,
@@ -36,12 +44,25 @@ async function createDemoRequest(req, res) {
       });
     }
 
-    const count = Number(studentCount);
+    const validStrengths = [
+      "Below 200",
+      "200-500",
+      "500-1000",
+      "1000-2000",
+      "Above 2000",
+    ];
 
-    if (!Number.isInteger(count) || count < 1) {
+    if (!validStrengths.includes(finalStudentCount.trim())) {
       return res.status(400).json({
         success: false,
-        message: "Student count must be at least 1.",
+        message: "Please select a valid student strength.",
+      });
+    }
+
+    if (!["Online", "Offline"].includes(preference)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please select a valid demo preference.",
       });
     }
 
@@ -58,16 +79,18 @@ async function createDemoRequest(req, res) {
       }
     }
 
-    // Save first so an email failure does not lose the request.
+    // Save request before sending notification email.
     const demoRequest = await DemoRequest.create({
       schoolName: schoolName.trim(),
-      contactName: contactName.trim(),
+      contactName: finalContactName.trim(),
       email: email.trim().toLowerCase(),
       phone: phone.trim(),
-      studentCount: count,
+      studentCount: finalStudentCount.trim(),
+      role: role.trim(),
+      preference,
       preferredDate: requestedDate,
-      preferredTime: preferredTime || "",
-      message: message || "",
+      preferredTime,
+      message,
     });
 
     let emailSent = false;
@@ -89,6 +112,8 @@ async function createDemoRequest(req, res) {
           `Email: ${demoRequest.email}`,
           `Phone: ${demoRequest.phone}`,
           `Students: ${demoRequest.studentCount}`,
+          `Designation: ${demoRequest.role || "Not specified"}`,
+          `Preference: ${demoRequest.preference}`,
           `Preferred date: ${demoRequest.preferredDate || "Not specified"}`,
           `Preferred time: ${demoRequest.preferredTime || "Not specified"}`,
           `Message: ${demoRequest.message || "None"}`,
@@ -100,7 +125,9 @@ async function createDemoRequest(req, res) {
           <p><b>Contact:</b> ${escapeHtml(demoRequest.contactName)}</p>
           <p><b>Email:</b> ${escapeHtml(demoRequest.email)}</p>
           <p><b>Phone:</b> ${escapeHtml(demoRequest.phone)}</p>
-          <p><b>Students:</b> ${demoRequest.studentCount}</p>
+          <p><b>Students:</b> ${escapeHtml(demoRequest.studentCount)}</p>
+          <p><b>Designation:</b> ${escapeHtml(demoRequest.role || "Not specified")}</p>
+          <p><b>Preference:</b> ${escapeHtml(demoRequest.preference)}</p>
           <p><b>Preferred date:</b> ${
             demoRequest.preferredDate
               ? demoRequest.preferredDate.toISOString().slice(0, 10)
@@ -164,6 +191,7 @@ async function getDemoRequests(req, res) {
     });
   } catch (error) {
     console.error("Get demo requests error:", error);
+
     return res.status(500).json({
       success: false,
       message: "Unable to load demo requests.",
@@ -244,6 +272,7 @@ async function updateDemoRequest(req, res) {
     });
   } catch (error) {
     console.error("Update demo request error:", error);
+
     return res.status(500).json({
       success: false,
       message: "Unable to update demo request.",

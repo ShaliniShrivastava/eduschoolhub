@@ -11,14 +11,17 @@ const allowedRoles = [
 
 const allowedStudentCounts = [
   "Under 200",
-  "200-500",
-  "501-1000",
-  "1001-2000",
+  "200–500",
+  "501–1000",
+  "1001–2000",
   "Above 2000",
 ];
 
-const isValidEmail = (email) =>
-  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+const allowedPlans = ["", "Starter", "Professional", "Enterprise"];
+
+const allowedBillingCycles = ["monthly", "yearly", "custom"];
+
+const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
 const escapeHtml = (value) =>
   String(value).replace(/[&<>"']/g, (char) => {
@@ -42,10 +45,11 @@ async function submitContactEnquiry(req, res) {
       phone,
       role,
       studentCount,
+      interestedPlan = "",
+      billingCycle,
       message,
     } = req.body || {};
 
-    // Validate required fields.
     const fields = {
       fullName,
       schoolName,
@@ -53,6 +57,7 @@ async function submitContactEnquiry(req, res) {
       phone,
       role,
       studentCount,
+      billingCycle,
       message,
     };
 
@@ -65,6 +70,13 @@ async function submitContactEnquiry(req, res) {
       }
     }
 
+    if (typeof interestedPlan !== "string") {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid interested plan.",
+      });
+    }
+
     const cleanData = {
       fullName: fullName.trim(),
       schoolName: schoolName.trim(),
@@ -72,6 +84,8 @@ async function submitContactEnquiry(req, res) {
       phone: phone.trim(),
       role: role.trim(),
       studentCount: studentCount.trim(),
+      interestedPlan: interestedPlan.trim(),
+      billingCycle: billingCycle.trim(),
       message: message.trim(),
     };
 
@@ -116,11 +130,24 @@ async function submitContactEnquiry(req, res) {
       });
     }
 
-    // Save the enquiry before attempting email delivery.
+    if (!allowedPlans.includes(cleanData.interestedPlan)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please select a valid plan.",
+      });
+    }
+
+    if (!allowedBillingCycles.includes(cleanData.billingCycle)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please select a valid billing preference.",
+      });
+    }
+
+    // Save enquiry before attempting email delivery.
     const enquiry = await ContactMessage.create(cleanData);
 
-    // Email failure must not undo the saved enquiry.
-   const receiverEmail = process.env.SUPER_ADMIN_EMAIL;
+    const receiverEmail = process.env.SUPER_ADMIN_EMAIL;
 
     if (receiverEmail) {
       try {
@@ -128,7 +155,7 @@ async function submitContactEnquiry(req, res) {
           Object.entries(cleanData).map(([key, value]) => [
             key,
             escapeHtml(value),
-          ])
+          ]),
         );
 
         await sendEmail({
@@ -142,6 +169,8 @@ async function submitContactEnquiry(req, res) {
             `Phone: ${cleanData.phone}`,
             `Role: ${cleanData.role}`,
             `Student Count: ${cleanData.studentCount}`,
+            `Interested Plan: ${cleanData.interestedPlan || "Not selected"}`,
+            `Billing Cycle: ${cleanData.billingCycle}`,
             `Message: ${cleanData.message}`,
           ].join("\n"),
           html: `
@@ -152,6 +181,8 @@ async function submitContactEnquiry(req, res) {
             <p><strong>Phone:</strong> ${safe.phone}</p>
             <p><strong>Role:</strong> ${safe.role}</p>
             <p><strong>Student Count:</strong> ${safe.studentCount}</p>
+            <p><strong>Interested Plan:</strong> ${safe.interestedPlan || "Not selected"}</p>
+            <p><strong>Billing Cycle:</strong> ${safe.billingCycle}</p>
             <p><strong>Message:</strong><br>${safe.message.replace(/\n/g, "<br>")}</p>
           `,
         });
@@ -160,7 +191,7 @@ async function submitContactEnquiry(req, res) {
       }
     } else {
       console.warn(
-        "CONTACT_RECEIVER_EMAIL is not configured; enquiry saved without email notification."
+        "SUPER_ADMIN_EMAIL is not configured; enquiry saved without email notification.",
       );
     }
 
@@ -174,7 +205,8 @@ async function submitContactEnquiry(req, res) {
 
     return res.status(500).json({
       success: false,
-      message: "Unable to submit your enquiry right now. Please try again later.",
+      message:
+        "Unable to submit your enquiry right now. Please try again later.",
     });
   }
 }

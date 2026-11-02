@@ -41,13 +41,18 @@ const contactMessageSchema = new mongoose.Schema(
     studentCount: {
       type: String,
       required: true,
-      enum: [
-        "Under 200",
-        "200-500",
-        "501-1000",
-        "1001-2000",
-        "Above 2000",
-      ],
+      enum: ["Under 200", "200–500", "501–1000", "1001–2000", "Above 2000"],
+    },
+    interestedPlan: {
+      type: String,
+      enum: ["", "Starter", "Professional", "Enterprise"],
+      default: "",
+    },
+    billingCycle: {
+      type: String,
+      required: true,
+      enum: ["monthly", "yearly", "custom"],
+      default: "monthly",
     },
     message: {
       type: String,
@@ -63,10 +68,9 @@ const contactMessageSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
-module.exports = mongoose.model(
-  "ContactMessage",
-  contactMessageSchema
-);
+module.exports =
+  mongoose.models.ContactMessage ||
+  mongoose.model("ContactMessage", contactMessageSchema);

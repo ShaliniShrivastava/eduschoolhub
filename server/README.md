@@ -123,19 +123,19 @@ The exact storage approach should match the current implementation. If OTP field
 
 Base URL: `http://localhost:5000/api`
 
-| Method | Endpoint | Purpose |
-|---|---|---|
-| POST | `/auth/register` | Register a supported account |
-| POST | `/auth/login` | Email/password login |
-| POST | `/auth/super-admin/login` | Super Admin login |
-| POST | `/auth/google/register` | Google registration |
-| POST | `/auth/google/login` | Google login |
-| POST | `/auth/google/link` | Link Google to an authenticated account |
-| POST | `/auth/forgot-password` | Request password-reset OTP |
-| POST | `/auth/reset-password` | Reset password using OTP |
-| GET | `/auth/me` | Get the current authenticated user |
-| POST | `/auth/logout` | Log out and clear the authentication cookie |
-| GET | `/health` | Check API server status |
+| Method | Endpoint                  | Purpose                                     |
+| ------ | ------------------------- | ------------------------------------------- |
+| POST   | `/auth/register`          | Register a supported account                |
+| POST   | `/auth/login`             | Email/password login                        |
+| POST   | `/auth/super-admin/login` | Super Admin login                           |
+| POST   | `/auth/google/register`   | Google registration                         |
+| POST   | `/auth/google/login`      | Google login                                |
+| POST   | `/auth/google/link`       | Link Google to an authenticated account     |
+| POST   | `/auth/forgot-password`   | Request password-reset OTP                  |
+| POST   | `/auth/reset-password`    | Reset password using OTP                    |
+| GET    | `/auth/me`                | Get the current authenticated user          |
+| POST   | `/auth/logout`            | Log out and clear the authentication cookie |
+| GET    | `/health`                 | Check API server status                     |
 
 **Note:** The table reflects the routes discussed during development. A dedicated change-password endpoint should be added to this documentation only after confirming its actual route and implementation.
 
@@ -229,12 +229,12 @@ The authentication features have been developed in stages. The following flows s
 
 Frontend login redirection, session restoration in the client, and protected dashboard access are separate client-side responsibilities and should be documented as complete only after implementation and testing.
 
-
 ### Google Login
 
 The application supports Google Authentication, allowing users to sign in using their Google account.
 
 **Features:**
+
 - Sign in using a Google account.
 - Verify Google ID tokens on the backend.
 - Authenticate users securely using HTTP-only cookies.
@@ -245,6 +245,7 @@ Configure the required Google OAuth credentials and environment variables in the
 
 Date: 22 October 2026
 Contact Enquiry Backend
+
 - Added a MongoDB model: models/ContactMessage.js.
 - Added controller logic for server-side validation and saving
   enquiries.
@@ -255,12 +256,12 @@ Contact Enquiry Backend
   environment variable.
 - Enquiries are saved before email delivery is attempted, so an email
   failure does not undo a saved enquiry.
-Book a Demo
+  Book a Demo
 - Existing demo router is registered in server.js at
   /api/demo-requests.
 - Exact demo controller/model changes were not verified in the
   conversation; check existing files for implementation details.
-Files Involved
+  Files Involved
 - server/models/ContactMessage.js --- enquiry schema.
 - server/controllers/contactController.js --- validation, database
   save, email attempt.
@@ -270,17 +271,58 @@ Files Involved
 - server/services/emailService.js --- existing email service reused.
 - server/routes/demoRoutes.js --- existing Book a Demo route.
 - server/.env --- existing SMTP settings and SUPER_ADMIN_EMAIL.
-API
-POST /api/contact
+  API
+  POST /api/contact
 
 Expected fields: fullName, schoolName, email, phone, role,
 studentCount, message.
 Run and Test
 cd server
 npm run dev
+
 - Submit a valid enquiry and confirm it is stored in MongoDB.
 - Verify the notification email.
 - Test invalid fields and rate limiting.
 - Test Book a Demo using the actual route defined in demoRoutes.js.
-Stack: Node.js, Express, MongoDB/Mongoose, Nodemailer. No Python is
-used in the application backend.
+  Stack: Node.js, Express, MongoDB/Mongoose, Nodemailer. No Python is
+  used in the application backend.
+
+2/11/2026
+
+## Demo Request & Contact Enquiry – Backend
+
+### 1. Book a Demo API
+
+- Created the `DemoRequest` model to store school demo enquiries in MongoDB.
+- Added fields for school name, contact person, email, phone, student strength, role, preference, preferred date, preferred time and message.
+- Updated `demoController.js` to validate incoming form data and save demo requests.
+- Added email notification functionality for new demo requests.
+- Added APIs to submit, retrieve and update demo requests.
+- Configured public submission and protected Super Admin management routes.
+
+**API Endpoint:** `POST /api/demo-requests`
+
+### 2. Contact Enquiry API
+
+- Updated the `ContactMessage` model to store contact enquiries.
+- Added fields for full name, school name, email, phone, role, student count, interested plan, billing cycle and message.
+- Added validation for required fields, email, phone number, role, student count, plan and billing preference.
+- Added enquiry status management with `new`, `in-progress` and `resolved` statuses.
+- Implemented MongoDB storage before email notification.
+- Added email notifications for new contact enquiries.
+- Configured rate limiting: maximum 5 submissions per 15 minutes.
+
+**API Endpoint:** `POST /api/contact`
+
+### 3. Server Configuration
+
+- Imported and mounted Demo Request and Contact routes in `server.js`.
+- Added database connection middleware using `ensureDBConnection`.
+- Configured JSON body parsing, CORS and request rate limiting.
+- Connected both APIs to the existing MongoDB connection.
+
+### 4. Current Development Status
+
+- Demo Request backend code updated.
+- Contact Enquiry backend code updated.
+- Both API routes configured in `server.js`.
