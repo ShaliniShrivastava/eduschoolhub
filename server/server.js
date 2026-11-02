@@ -27,7 +27,10 @@ app.use(
 );
 
 // CORS configuration for deployed and local frontends
-const allowedOrigins = (process.env.CLIENT_URL || "http://localhost:5173")
+const allowedOrigins = (
+  process.env.CLIENT_URL ||
+  "http://localhost:5173,https://eduschoolhub.vercel.app"
+)
   .split(",")
   .map((origin) => origin.trim().replace(/\/+$/, ""))
   .filter(Boolean);
@@ -134,8 +137,8 @@ if (require.main === module) {
 
   (async () => {
     try {
-      if (!process.env.JWT_SECRET) {
-        throw new Error("JWT_SECRET is missing from .env");
+      if (!process.env.JWT_SECRET || !process.env.MONGO_URI) {
+        throw new Error("JWT_SECRET or MONGO_URI is missing from .env");
       }
 
       await connectDB();

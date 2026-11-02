@@ -1,13 +1,16 @@
 const cors = require("cors");
 
-const allowedOrigins = (process.env.CLIENT_URL || "http://localhost:5173")
+const allowedOrigins = (
+  process.env.CLIENT_URL ||
+  "http://localhost:5173,https://eduschoolhub.vercel.app"
+)
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
 
 const corsOptions = {
   origin(origin, callback) {
-    // Allow requests without Origin, such as server-to-server or Postman.
+    // Allow requests without Origin
     if (!origin) {
       return callback(null, true);
     }
