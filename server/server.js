@@ -1,3 +1,4 @@
+
 require("dotenv").config();
 
 const express = require("express");
@@ -8,11 +9,13 @@ const { rateLimit } = require("express-rate-limit");
 
 const connectDB = require("./config/db");
 
+// Existing routes
 const authRoutes = require("./routes/authRoutes");
 const superAdminRoutes = require("./routes/superAdminRoutes");
 const googleAuthRoutes = require("./routes/googleAuthRoutes");
-const demoRoutes = require("./routes/demoRoutes");
-const contactRoutes = require("./routes/contactRoutes");
+
+// Main Website routes
+const mainWebsiteRoutes = require("./routes/mainWebsiteRoutes");
 
 const app = express();
 
@@ -23,10 +26,10 @@ app.use(
     crossOriginOpenerPolicy: {
       policy: "same-origin-allow-popups",
     },
-  }),
+  })
 );
 
-// CORS configuration for deployed and local frontends
+// CORS configuration
 const allowedOrigins = (
   process.env.CLIENT_URL ||
   "http://localhost:5173,https://eduschoolhub.vercel.app"
@@ -49,7 +52,7 @@ app.use(
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-  }),
+  })
 );
 
 app.use(express.json({ limit: "10kb" }));
@@ -91,6 +94,7 @@ const ensureDBConnection = async (req, res, next) => {
     }
 
     await dbConnectionPromise;
+
     return next();
   } catch (error) {
     console.error("Database connection failed:", error.message);
@@ -106,8 +110,7 @@ const ensureDBConnection = async (req, res, next) => {
 app.use("/api/auth", ensureDBConnection);
 app.use("/api/superadmin", ensureDBConnection);
 app.use("/api/google-auth", ensureDBConnection);
-app.use("/api/demo-requests", ensureDBConnection);
-app.use("/api/contact", ensureDBConnection);
+app.use("/api/main-website", ensureDBConnection);
 
 // Authentication rate limiter
 const authLimiter = rateLimit({
@@ -125,8 +128,9 @@ const authLimiter = rateLimit({
 app.use("/api/auth", authLimiter, authRoutes);
 app.use("/api/superadmin", superAdminRoutes);
 app.use("/api/google-auth", googleAuthRoutes);
-app.use("/api/demo-requests", demoRoutes);
-app.use("/api/contact", contactRoutes);
+
+// Main Website - Single route file
+app.use("/api/main-website", mainWebsiteRoutes);
 
 // Export Express app for Vercel
 module.exports = app;

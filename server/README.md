@@ -326,3 +326,104 @@ npm run dev
 - Demo Request backend code updated.
 - Contact Enquiry backend code updated.
 - Both API routes configured in `server.js`.
+
+
+3 November 2026,
+# EduSchoolHub – Main Website Backend Updates
+
+**Date:** 3 November 2026
+
+## 1. Main Website Routes Consolidation
+
+- Seven separate route files ko combine karke single `mainWebsiteRoutes.js` file banayi.
+- Controllers ko separate rakha hai.
+- Existing controller functions aur middleware preserve kiye hain.
+
+**Updated Structure:**
+```text
+server/
+└── routes/
+    ├── mainWebsiteRoutes.js
+    ├── authRoutes.js
+    ├── superAdminRoutes.js
+    └── googleAuthRoutes.js
+```
+
+## 2. Main Website APIs
+
+Following pages ke APIs configure kiye:
+
+- Home
+- About
+- Features
+- Modules
+- Pricing
+- Contact
+- Demo Requests
+
+### Page Management APIs
+
+Home, About, Features, Modules aur Pricing ke liye:
+
+| Method | Purpose |
+|---|---|
+| GET | Public published content |
+| GET | Admin content |
+| PUT | Save draft |
+| PATCH | Publish draft |
+
+### Contact APIs
+
+- Public contact enquiry submission.
+- Rate limiting: 5 requests per 15 minutes.
+- Existing contact controller and email notification functionality retained.
+
+### Demo APIs
+
+- Public demo request submission.
+- Super Admin demo request listing.
+- Super Admin demo request status update.
+
+## 3. Server.js Updates
+
+- All Main Website route imports replaced with a single route import.
+- Main Website APIs mounted at `/api/main-website`.
+- Existing authentication routes preserved.
+- Google Login routes preserved.
+- CORS configuration retained.
+- Helmet security middleware retained.
+- Cookie parser and JSON body parser retained.
+- Database connection middleware retained.
+- Authentication rate limiter retained.
+- Vercel deployment configuration preserved.
+
+### Main Website Route Mounting
+
+```js
+const mainWebsiteRoutes = require("./routes/mainWebsiteRoutes");
+
+app.use("/api/main-website", ensureDBConnection);
+app.use("/api/main-website", mainWebsiteRoutes);
+```
+
+**Current Progress:** Main Website routes consolidated, `server.js` updated
+
+
+4/11/26
+## Main Website Backend – API Development & Testing
+
+Today, the Main Website backend APIs were completed and tested for the following sections:
+
+- **Home:** Get, Admin Get, Save Draft, Publish.
+- **About:** Get, Admin Get, Save Draft, Publish.
+- **Features:** Get, Admin Get, Save Draft, Publish.
+- **Modules:** Get, Admin Get, Save Draft, Publish.
+- **Pricing:** Get, Admin Get, Save Draft, Publish.
+- **Contact:** Submit Contact Enquiry, Get Contact Enquiries.
+- **Demo:** Create Demo Request, Get Demo Requests, Update Demo Request.
+
+### Key Implementation
+- Implemented Draft–Review–Publish workflow for website content.
+- Added Super Admin authentication for admin APIs.
+- Added contact enquiry and demo request management.
+- Tested all listed APIs successfully using Postman.

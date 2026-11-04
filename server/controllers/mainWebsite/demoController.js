@@ -1,6 +1,6 @@
 
-const DemoRequest = require("../models/DemoRequest");
-const { sendEmail } = require("../services/emailService");
+const DemoRequest = require("../../models/mainWebsite/DemoRequest");
+const { sendEmail } = require("../../services/emailService");
 
 const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 

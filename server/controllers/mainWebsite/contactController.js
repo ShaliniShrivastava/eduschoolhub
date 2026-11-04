@@ -1,5 +1,7 @@
-const ContactMessage = require("../models/ContactMessage");
-const { sendEmail } = require("../services/emailService");
+const ContactMessage = require("../../models/mainWebsite/ContactMessage");
+const { sendEmail } = require("../../services/emailService");
+
+
 
 const allowedRoles = [
   "School Owner",
@@ -211,6 +213,27 @@ async function submitContactEnquiry(req, res) {
   }
 }
 
+const getContactEnquiries = async (req, res) => {
+  try {
+    const enquiries = await ContactMessage.find()
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      count: enquiries.length,
+      data: enquiries,
+    });
+  } catch (error) {
+    console.error("Contact enquiries fetch failed:", error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to fetch contact enquiries.",
+    });
+  }
+};
+
 module.exports = {
   submitContactEnquiry,
+  getContactEnquiries,
 };
