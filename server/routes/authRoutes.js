@@ -1,4 +1,3 @@
-
 const express = require("express");
 const AuthController = require("../controllers/authController");
 const authMiddleware = require("../middleware/authMiddleware");
@@ -24,6 +23,11 @@ router.post(
 // Password recovery
 router.post("/forgot-password", AuthController.forgotPassword);
 router.post("/reset-password", AuthController.resetPassword);
+
+// Refresh access token using refresh token cookie
+router.post("/refresh", AuthController.refreshSession);
+
+// Get current authenticated user
 router.get("/me", authMiddleware, AuthController.getCurrentUser);
 
 // Logout

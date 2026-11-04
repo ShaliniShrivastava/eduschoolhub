@@ -1,3 +1,4 @@
+
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
@@ -6,12 +7,16 @@ const { sendEmail } = require("../services/emailService");
 const {
   issueAccessCookie,
   clearAccessCookie,
+  createAccessToken,
+  getAccessCookieOptions,
+  verifyRefreshToken,
 } = require("../services/sessionService");
 
 const { verifyGoogleIdToken } = require("../services/googleAuthService");
 
 const MAX_ATTEMPTS = Infinity;
 // const MAX_ATTEMPTS = 5;
+
 const LOCK_TIME = 15 * 60 * 1000;
 const OTP_EXPIRY = 10 * 60 * 1000;
 const OTP_MAX_ATTEMPTS = 5;
@@ -30,7 +35,9 @@ function publicUser(user) {
 }
 
 function isAccountLocked(user) {
-  return Boolean(user.lockUntil && user.lockUntil.getTime() > Date.now());
+  return Boolean(
+    user.lockUntil && user.lockUntil.getTime() > Date.now()
+  );
 }
 
 function clearExpiredLock(user) {
@@ -75,7 +82,10 @@ async function verifyPassword(user, password) {
     return {
       locked: isAccountLocked(user),
       valid: false,
-      attemptsRemaining: Math.max(0, MAX_ATTEMPTS - user.failedLoginAttempts),
+      attemptsRemaining: Math.max(
+        0,
+        MAX_ATTEMPTS - user.failedLoginAttempts
+      ),
     };
   }
 
@@ -266,13 +276,14 @@ const superAdminLogin = async (req, res) => {
       email: email.trim().toLowerCase(),
       role: "superAdmin",
     }).select("+password");
-//debugging info for super admin login
+
+    // Debugging info for Super Admin login.
     console.log("[SUPER ADMIN DEBUG]", {
-  userFound: Boolean(user),
-  passwordHashExists: Boolean(user?.password),
-  role: user?.role ?? null,
-  isActive: user?.isActive ?? null,
-});
+      userFound: Boolean(user),
+      passwordHashExists: Boolean(user?.password),
+      role: user?.role ?? null,
+      isActive: user?.isActive ?? null,
+    });
 
     if (!user || !user.password) {
       return sendInvalidCredentials(res);
@@ -286,12 +297,13 @@ const superAdminLogin = async (req, res) => {
     }
 
     const verification = await verifyPassword(user, password);
-    //verification debug info for super admin login
-console.log("[PASSWORD DEBUG]", {
-  valid: verification.valid,
-  locked: verification.locked,
-  attemptsRemaining: verification.attemptsRemaining,
-});
+
+    // Verification debug info.
+    console.log("[PASSWORD DEBUG]", {
+      valid: verification.valid,
+      locked: verification.locked,
+      attemptsRemaining: verification.attemptsRemaining,
+    });
 
     if (verification.locked) {
       return res.status(423).json({
@@ -330,7 +342,6 @@ console.log("[PASSWORD DEBUG]", {
 const googleRegister = async (req, res) => {
   try {
     const { credential } = req.body || {};
-
     const identity = await verifyGoogleIdToken(credential);
 
     const existingGoogleUser = await User.findOne({
@@ -391,7 +402,6 @@ const googleRegister = async (req, res) => {
 const googleLogin = async (req, res) => {
   try {
     const { credential } = req.body || {};
-
     const identity = await verifyGoogleIdToken(credential);
 
     const user = await User.findOne({
@@ -526,7 +536,7 @@ const forgotPassword = async (req, res) => {
     };
 
     const user = await User.findOne({ email }).select(
-      "+otpHash +otpExpiry +otpAttempts",
+      "+otpHash +otpExpiry +otpAttempts"
     );
 
     if (!user) {
@@ -631,7 +641,10 @@ const resetPassword = async (req, res) => {
       });
     }
 
-    const submittedHash = crypto.createHash("sha256").update(otp).digest();
+    const submittedHash = crypto
+      .createHash("sha256")
+      .update(otp)
+      .digest();
 
     const storedHash = Buffer.from(user.otpHash, "hex");
 
@@ -646,7 +659,10 @@ const resetPassword = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Invalid or expired OTP.",
-        attemptsRemaining: Math.max(0, OTP_MAX_ATTEMPTS - user.otpAttempts),
+        attemptsRemaining: Math.max(
+          0,
+          OTP_MAX_ATTEMPTS - user.otpAttempts
+        ),
       });
     }
 
@@ -673,7 +689,7 @@ const resetPassword = async (req, res) => {
   }
 };
 
-/* Get the currently authenticated user's session */
+// Get the currently authenticated user's session.
 const getCurrentUser = async (req, res) => {
   if (!req.user || req.user.isActive !== true) {
     return res.status(401).json({
@@ -687,6 +703,73 @@ const getCurrentUser = async (req, res) => {
     success: true,
     user: publicUser(req.user),
   });
+};
+
+// Renew access token using the refresh token cookie.
+const refreshSession = async (req, res) => {
+  const refreshToken = req.cookies?.refreshToken;
+
+  if (!refreshToken) {
+    clearAccessCookie(res);
+
+    return res.status(401).json({
+      success: false,
+      message: "Session expired. Please log in again.",
+    });
+  }
+
+  try {
+    const decoded = verifyRefreshToken(refreshToken);
+    const user = await User.findById(decoded.userId);
+
+    if (
+      !user ||
+      user.isActive !== true ||
+      user.role !== decoded.role
+    ) {
+      clearAccessCookie(res);
+
+      return res.status(401).json({
+        success: false,
+        message: "Invalid session. Please log in again.",
+      });
+    }
+
+    const rememberMe = decoded.rememberMe === true;
+    const accessToken = createAccessToken(user);
+
+    res.cookie(
+      "accessToken",
+      accessToken,
+      getAccessCookieOptions(rememberMe)
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Session renewed successfully.",
+    });
+  } catch (error) {
+    if (
+      error.name === "JsonWebTokenError" ||
+      error.name === "TokenExpiredError" ||
+      error.name === "NotBeforeError" ||
+      error.message === "Invalid refresh token."
+    ) {
+      clearAccessCookie(res);
+
+      return res.status(401).json({
+        success: false,
+        message: "Session expired. Please log in again.",
+      });
+    }
+
+    console.error("Refresh session error:", error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to renew session.",
+    });
+  }
 };
 
 // Logout.
@@ -707,6 +790,7 @@ module.exports = {
   googleLogin,
   linkGoogleAccount,
   getCurrentUser,
+  refreshSession,
   logout,
   forgotPassword,
   resetPassword,

@@ -1,4 +1,3 @@
-
 require("dotenv").config();
 
 const express = require("express");
@@ -26,7 +25,7 @@ app.use(
     crossOriginOpenerPolicy: {
       policy: "same-origin-allow-popups",
     },
-  })
+  }),
 );
 
 // CORS configuration
@@ -52,7 +51,7 @@ app.use(
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-  })
+  }),
 );
 
 app.use(express.json({ limit: "10kb" }));
@@ -79,7 +78,11 @@ let dbConnectionPromise;
 
 const ensureDBConnection = async (req, res, next) => {
   try {
-    if (!process.env.JWT_SECRET || !process.env.MONGO_URI) {
+    if (
+      !process.env.JWT_SECRET ||
+      !process.env.JWT_REFRESH_SECRET ||
+      !process.env.MONGO_URI
+    ) {
       return res.status(500).json({
         success: false,
         message: "Server configuration error",
@@ -141,8 +144,14 @@ if (require.main === module) {
 
   (async () => {
     try {
-      if (!process.env.JWT_SECRET || !process.env.MONGO_URI) {
-        throw new Error("JWT_SECRET or MONGO_URI is missing from .env");
+      if (
+        !process.env.JWT_SECRET ||
+        !process.env.JWT_REFRESH_SECRET ||
+        !process.env.MONGO_URI
+      ) {
+        throw new Error(
+          "JWT_SECRET, JWT_REFRESH_SECRET or MONGO_URI is missing from .env",
+        );
       }
 
       await connectDB();
