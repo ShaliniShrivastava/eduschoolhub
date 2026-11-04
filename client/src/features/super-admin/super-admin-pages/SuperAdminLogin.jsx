@@ -1,10 +1,11 @@
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+
 import GoogleLoginButton from "../../../common-components/shared-components/GoogleLoginButton";
 import authService from "../../auth/auth-services/authService";
+import apiClient from "../../../app-services/apiClient";
 import { useAuth } from "../../../app-context/AuthContext";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 export default function SuperAdminLogin() {
   const navigate = useNavigate();
@@ -17,10 +18,12 @@ export default function SuperAdminLogin() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
+
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Handle input changes
   const handleChange = (event) => {
     const { name, value } = event.target;
 
@@ -30,6 +33,7 @@ export default function SuperAdminLogin() {
     }));
   };
 
+  // Super Admin email/password login
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
@@ -45,69 +49,68 @@ export default function SuperAdminLogin() {
     try {
       setLoading(true);
 
-      const response = await fetch(`${API_URL}/auth/super-admin/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
+      const response = await apiClient.post(
+        "/auth/super-admin/login",
+        {
           email,
           password,
           rememberMe,
-        }),
-      });
+        }
+      );
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          result.message || "Unable to sign in. Please try again.",
-        );
-      }
+      const result = response.data;
 
       if (result.user?.role !== "superAdmin") {
         throw new Error("Super Admin access is required.");
       }
 
       setUser(result.user);
-      navigate("/super-admin/dashboard", { replace: true });
+
+      navigate("/super-admin/dashboard", {
+        replace: true,
+      });
     } catch (err) {
       setError(
         err.response?.data?.message ||
           err.message ||
-          "Unable to connect to the server.",
+          "Unable to connect to the server."
       );
     } finally {
       setLoading(false);
     }
   };
 
+  // Super Admin Google login
   const handleGoogleCredential = async (credential) => {
     setError("");
 
     try {
       setGoogleLoading(true);
 
-      const result = await authService.googleSuperAdminLogin(credential);
+      const result =
+        await authService.googleSuperAdminLogin(credential);
 
       if (result.user?.role !== "superAdmin") {
         throw new Error("Super Admin access is required.");
       }
 
       setUser(result.user);
-      navigate("/super-admin/dashboard", { replace: true });
+
+      navigate("/super-admin/dashboard", {
+        replace: true,
+      });
     } catch (err) {
       setError(
         err.response?.data?.message ||
           err.message ||
-          "Google sign-in failed. Please try again.",
+          "Google sign-in failed. Please try again."
       );
     } finally {
       setGoogleLoading(false);
     }
   };
 
+  // Login page features
   const features = [
     {
       icon: "▦",
@@ -145,11 +148,15 @@ export default function SuperAdminLogin() {
 
   return (
     <main className="min-h-screen bg-slate-50 lg:grid lg:grid-cols-[1.18fr_0.82fr]">
+
       {/* Left branding panel */}
       <section className="relative flex flex-col overflow-hidden bg-gradient-to-br from-blue-50 via-blue-100 to-indigo-200 px-6 py-8 sm:px-10 lg:min-h-screen lg:justify-between lg:px-12 xl:px-16">
+
         <div className="pointer-events-none absolute -left-32 top-32 h-96 w-96 rounded-full bg-white/60 blur-3xl" />
+
         <div className="pointer-events-none absolute -right-20 bottom-20 h-80 w-80 rounded-full bg-indigo-300/40 blur-3xl" />
 
+        {/* Brand */}
         <Link
           to="/"
           className="relative z-10 inline-flex w-fit items-center gap-3"
@@ -163,24 +170,32 @@ export default function SuperAdminLogin() {
           </span>
         </Link>
 
+        {/* Branding content */}
         <div className="relative z-10 mx-auto mt-12 w-full max-w-2xl lg:my-12">
+
           <p className="text-xs font-bold tracking-[0.25em] text-blue-700">
             SCHOOLS · PEOPLE · GROWTH · TOGETHER
           </p>
 
           <h1 className="mt-7 text-4xl font-extrabold leading-tight tracking-tight text-slate-950 sm:text-5xl xl:text-6xl">
             Smart School Management{" "}
-            <span className="text-blue-600">Platform</span>
+            <span className="text-blue-600">
+              Platform
+            </span>
           </h1>
 
           <p className="mt-5 max-w-xl text-base leading-7 text-slate-600 sm:text-lg">
-            Empowering schools with seamless management, insights and growth —
-            all in one powerful platform.
+            Empowering schools with seamless management,
+            insights and growth — all in one powerful platform.
           </p>
 
+          {/* Features */}
           <div className="mt-9 space-y-5">
             {features.map((item) => (
-              <div key={item.title} className="flex items-center gap-4">
+              <div
+                key={item.title}
+                className="flex items-center gap-4"
+              >
                 <div
                   className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-2xl ${item.color}`}
                 >
@@ -188,7 +203,10 @@ export default function SuperAdminLogin() {
                 </div>
 
                 <div>
-                  <h2 className="font-bold text-slate-950">{item.title}</h2>
+                  <h2 className="font-bold text-slate-950">
+                    {item.title}
+                  </h2>
+
                   <p className="mt-1 text-sm leading-6 text-slate-600">
                     {item.description}
                   </p>
@@ -199,9 +217,13 @@ export default function SuperAdminLogin() {
 
           {/* Dashboard preview */}
           <div className="relative mt-10 hidden rounded-2xl border border-white/80 bg-white/80 p-5 shadow-xl backdrop-blur sm:block">
+
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs text-slate-500">Platform overview</p>
+                <p className="text-xs text-slate-500">
+                  Platform overview
+                </p>
+
                 <h3 className="mt-1 font-bold text-slate-900">
                   Your schools at a glance
                 </h3>
@@ -214,8 +236,14 @@ export default function SuperAdminLogin() {
 
             <div className="mt-5 grid grid-cols-3 gap-3">
               {overviewItems.map(([label, value]) => (
-                <div key={label} className="rounded-xl bg-blue-50/80 p-3">
-                  <p className="text-xs text-slate-500">{label}</p>
+                <div
+                  key={label}
+                  className="rounded-xl bg-blue-50/80 p-3"
+                >
+                  <p className="text-xs text-slate-500">
+                    {label}
+                  </p>
+
                   <p className="mt-2 text-sm font-bold text-blue-700">
                     {value}
                   </p>
@@ -227,28 +255,40 @@ export default function SuperAdminLogin() {
 
         {/* Platform statistics */}
         <div className="relative z-10 mt-10 grid grid-cols-3 gap-3 border-t border-blue-200/70 pt-6 lg:mt-0">
+
           {stats.map(([value, label]) => (
             <div key={label}>
               <strong className="text-xl font-extrabold text-blue-700 sm:text-2xl">
                 {value}
               </strong>
-              <p className="mt-1 text-xs text-slate-600">{label}</p>
+
+              <p className="mt-1 text-xs text-slate-600">
+                {label}
+              </p>
             </div>
           ))}
+
         </div>
       </section>
 
       {/* Login panel */}
       <section className="flex min-h-[650px] flex-col justify-center px-5 py-12 sm:px-10 lg:min-h-screen lg:px-12 xl:px-16">
+
         <div className="mx-auto w-full max-w-lg">
+
+          {/* Language */}
           <div className="mb-6 flex justify-end">
             <span className="text-sm font-medium text-slate-600">
               ◎ English
             </span>
           </div>
 
+          {/* Login card */}
           <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-xl shadow-blue-900/5 sm:p-9 xl:p-10">
+
+            {/* Login heading */}
             <div className="text-center">
+
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-3xl font-extrabold text-white shadow-lg">
                 E
               </div>
@@ -260,9 +300,15 @@ export default function SuperAdminLogin() {
               <p className="mt-2 text-sm leading-6 text-slate-500 sm:text-base">
                 Sign in to access the EduSchoolHub control panel.
               </p>
+
             </div>
 
-            <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+            {/* Login form */}
+            <form
+              onSubmit={handleSubmit}
+              className="mt-8 space-y-5"
+            >
+
               {/* Email */}
               <div>
                 <label
@@ -296,6 +342,7 @@ export default function SuperAdminLogin() {
                 </label>
 
                 <div className="flex items-center rounded-xl border border-slate-200 focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-100">
+
                   <input
                     id="password"
                     name="password"
@@ -311,7 +358,9 @@ export default function SuperAdminLogin() {
 
                   <button
                     type="button"
-                    onClick={() => setShowPassword((previous) => !previous)}
+                    onClick={() =>
+                      setShowPassword((previous) => !previous)
+                    }
                     aria-label={
                       showPassword ? "Hide password" : "Show password"
                     }
@@ -319,20 +368,27 @@ export default function SuperAdminLogin() {
                   >
                     {showPassword ? "Hide" : "Show"}
                   </button>
+
                 </div>
               </div>
 
               {/* Remember me and forgot password */}
               <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
+
                 <label className="flex cursor-pointer items-center gap-2 text-slate-700">
+
                   <input
                     type="checkbox"
                     checked={rememberMe}
-                    onChange={(event) => setRememberMe(event.target.checked)}
+                    onChange={(event) =>
+                      setRememberMe(event.target.checked)
+                    }
                     disabled={isLoading}
                     className="h-4 w-4 accent-blue-600"
                   />
+
                   Remember me
+
                 </label>
 
                 <Link
@@ -341,8 +397,10 @@ export default function SuperAdminLogin() {
                 >
                   Forgot Password?
                 </Link>
+
               </div>
 
+              {/* Error message */}
               {error && (
                 <div
                   role="alert"
@@ -353,26 +411,35 @@ export default function SuperAdminLogin() {
                 </div>
               )}
 
-              {/* Password login */}
+              {/* Login button */}
               <button
                 type="submit"
                 disabled={isLoading}
                 className="flex w-full items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 px-5 py-4 font-bold text-white shadow-lg shadow-blue-600/20 transition hover:from-blue-700 hover:to-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? "Signing in..." : "Login to Dashboard"}
-                {!isLoading && <span aria-hidden="true">→</span>}
+
+                {!isLoading && (
+                  <span aria-hidden="true">→</span>
+                )}
               </button>
+
             </form>
 
             {/* Divider */}
             <div className="my-7 flex items-center gap-4">
               <div className="h-px flex-1 bg-slate-200" />
-              <span className="text-xs font-semibold text-slate-400">OR</span>
+
+              <span className="text-xs font-semibold text-slate-400">
+                OR
+              </span>
+
               <div className="h-px flex-1 bg-slate-200" />
             </div>
 
             {/* Google login */}
             <div className="flex flex-col items-center gap-3">
+
               <GoogleLoginButton
                 onCredential={handleGoogleCredential}
                 onError={(message) => setError(message)}
@@ -380,41 +447,65 @@ export default function SuperAdminLogin() {
               />
 
               {googleLoading && (
-                <p className="text-sm text-slate-500" role="status">
+                <p
+                  className="text-sm text-slate-500"
+                  role="status"
+                >
                   Verifying your Google account...
                 </p>
               )}
+
             </div>
 
+            {/* Security information */}
             <div className="mt-6 rounded-xl bg-blue-50/80 px-4 py-4 text-center">
+
               <p className="text-sm font-semibold text-slate-700">
                 ♢ Protected admin access
               </p>
+
               <p className="mt-1 text-xs leading-5 text-slate-500">
                 Only authorized Super Admin accounts can access this area.
               </p>
+
             </div>
+
           </div>
 
           {/* Footer */}
           <div className="mt-6 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
-            <p>© {new Date().getFullYear()} EduSchoolHub.</p>
+
+            <p>
+              © {new Date().getFullYear()} EduSchoolHub.
+            </p>
 
             <div className="flex gap-4">
-              <Link to="/privacy" className="hover:text-blue-600">
+
+              <Link
+                to="/privacy"
+                className="hover:text-blue-600"
+              >
                 Privacy
               </Link>
-              <Link to="/terms" className="hover:text-blue-600">
+
+              <Link
+                to="/terms"
+                className="hover:text-blue-600"
+              >
                 Terms
               </Link>
+
               <a
                 href="mailto:hello@eduschoolhub.com"
                 className="hover:text-blue-600"
               >
                 Support
               </a>
+
             </div>
+
           </div>
+
         </div>
       </section>
     </main>

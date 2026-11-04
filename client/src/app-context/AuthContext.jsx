@@ -8,7 +8,8 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Restore session when the app starts or page refreshes
+  // Restore existing session when app starts or page refreshes.
+  // apiClient interceptor will attempt token refresh if access token expires.
   useEffect(() => {
     let isMounted = true;
 
@@ -17,7 +18,7 @@ export function AuthProvider({ children }) {
         const response = await authService.getCurrentUser();
 
         if (isMounted) {
-          setUser(response.user ?? null);
+          setUser(response?.user ?? null);
         }
       } catch (error) {
         if (isMounted) {
@@ -37,30 +38,33 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
+  // Email/password login
   const login = async (credentials) => {
     setLoading(true);
 
     try {
       const response = await authService.login(credentials);
-      setUser(response.user);
+      setUser(response?.user ?? null);
       return response;
     } finally {
       setLoading(false);
     }
   };
 
+  // Google login
   const googleLogin = async (credential) => {
     setLoading(true);
 
     try {
       const response = await authService.googleLogin(credential);
-      setUser(response.user);
+      setUser(response?.user ?? null);
       return response;
     } finally {
       setLoading(false);
     }
   };
 
+  // Super Admin Google login
   const googleSuperAdminLogin = async (credential) => {
     setLoading(true);
 
@@ -68,18 +72,22 @@ export function AuthProvider({ children }) {
       const response =
         await authService.googleSuperAdminLogin(credential);
 
-      setUser(response.user);
+      setUser(response?.user ?? null);
       return response;
     } finally {
       setLoading(false);
     }
   };
 
+  // Logout
   const logout = async () => {
+    setLoading(true);
+
     try {
       await authService.logout();
     } finally {
       setUser(null);
+      setLoading(false);
     }
   };
 

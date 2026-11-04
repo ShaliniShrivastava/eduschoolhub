@@ -32,11 +32,17 @@ const authService = {
     return response.data;
   },
 
-// Fetch current authenticated user
-getCurrentUser: async () => {
-  const response = await apiClient.get("/auth/me");
-  return response.data;
-},
+  // Fetch current authenticated user
+  getCurrentUser: async () => {
+    const response = await apiClient.get("/auth/me");
+    return response.data;
+  },
+
+  // Refresh expired access token
+  refreshSession: async () => {
+    const response = await apiClient.post("/auth/refresh");
+    return response.data;
+  },
 
   // Logout
   logout: async () => {

@@ -5,9 +5,8 @@ import Login from "../features/auth/auth-pages/Login";
 import SuperAdminLogin from "../features/super-admin/super-admin-pages/SuperAdminLogin";
 
 import ProtectedRoute from "./ProtectedRoute";
-import RoleRoute from "./RoleRoute";
+import RoleRoute from "./RoleRoutes";
 
-// Apne existing dashboard components ke paths ke according imports update karna.
 import SuperAdminDashboard from "../features/super-admin/super-admin-pages/SuperAdminDashboard";
 
 export default function AppRoutes() {
