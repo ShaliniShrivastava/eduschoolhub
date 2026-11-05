@@ -1,11 +1,14 @@
+
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { AuthProvider } from "./app-context/AuthContext";
+
+// Route Protection
 import ProtectedRoute from "./app-routes/ProtectedRoute";
 import RoleRoute from "./app-routes/RoleRoutes.jsx";
 
-// Public website pages
+// Public Website Pages
 import Home from "./features/main-website/main-website-pages/Home.jsx";
 import Features from "./features/main-website/main-website-pages/Features.jsx";
 import Modules from "./features/main-website/main-website-pages/Modules.jsx";
@@ -13,24 +16,25 @@ import Pricing from "./features/main-website/main-website-pages/Pricing.jsx";
 import About from "./features/main-website/main-website-pages/About.jsx";
 import Contact from "./features/main-website/main-website-pages/Contact.jsx";
 
-// Public website components
+// Public Website Components
 import MainNavbar from "./features/main-website/main-website-components/MainNavbar.jsx";
 import MainFooter from "./features/main-website/main-website-components/MainFooter.jsx";
 import BookDemoForm from "./features/main-website/main-website-components/BookDemoForm.jsx";
 
-// Authentication pages
+// Authentication Pages
 import Login from "./features/auth/auth-pages/Login.jsx";
 import Register from "./features/auth/auth-pages/Register.jsx";
 import ForgotPassword from "./features/auth/auth-pages/ForgotPassword.jsx";
 import ResetPassword from "./features/auth/auth-pages/ResetPassword.jsx";
 
-// Super Admin pages
+// Super Admin Pages
 import SuperAdminLogin from "./features/super-admin/super-admin-pages/SuperAdminLogin.jsx";
 import SuperAdminDashboard from "./features/super-admin/super-admin-pages/SuperAdminDashboard.jsx";
+import WebsiteHomeEditor from "./features/super-admin/super-admin-pages/WebsiteHomeEditor.jsx";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
-// Public website layout
+// Public Website Layout
 function PublicLayout({ children }) {
   return (
     <>
@@ -41,7 +45,7 @@ function PublicLayout({ children }) {
   );
 }
 
-// 404 page
+// 404 Page
 function NotFound() {
   return (
     <div className="flex min-h-[70vh] flex-col items-center justify-center px-4 text-center">
@@ -65,11 +69,10 @@ function NotFound() {
   );
 }
 
+// Main App
 function App() {
   if (!GOOGLE_CLIENT_ID) {
-    console.warn(
-      "VITE_GOOGLE_CLIENT_ID is missing from your environment variables.",
-    );
+    console.warn("VITE_GOOGLE_CLIENT_ID is missing from your environment variables.");
   }
 
   return (
@@ -77,96 +80,36 @@ function App() {
       <AuthProvider>
         <BrowserRouter>
           <Routes>
-            {/* Public website routes */}
-            <Route
-              path="/"
-              element={
-                <PublicLayout>
-                  <Home />
-                </PublicLayout>
-              }
-            />
 
-            <Route
-              path="/features"
-              element={
-                <PublicLayout>
-                  <Features />
-                </PublicLayout>
-              }
-            />
+            {/* Public Website Routes */}
+            <Route path="/" element={<PublicLayout><Home /></PublicLayout>} />
+            <Route path="/features" element={<PublicLayout><Features /></PublicLayout>} />
+            <Route path="/modules" element={<PublicLayout><Modules /></PublicLayout>} />
+            <Route path="/pricing" element={<PublicLayout><Pricing /></PublicLayout>} />
+            <Route path="/about" element={<PublicLayout><About /></PublicLayout>} />
+            <Route path="/contact" element={<PublicLayout><Contact /></PublicLayout>} />
+            <Route path="/book-demo" element={<PublicLayout><BookDemoForm /></PublicLayout>} />
 
-            <Route
-              path="/modules"
-              element={
-                <PublicLayout>
-                  <Modules />
-                </PublicLayout>
-              }
-            />
-
-            <Route
-              path="/pricing"
-              element={
-                <PublicLayout>
-                  <Pricing />
-                </PublicLayout>
-              }
-            />
-
-            <Route
-              path="/about"
-              element={
-                <PublicLayout>
-                  <About />
-                </PublicLayout>
-              }
-            />
-
-            <Route
-              path="/contact"
-              element={
-                <PublicLayout>
-                  <Contact />
-                </PublicLayout>
-              }
-            />
-
-            {/* Book a Demo */}
-            <Route
-              path="/book-demo"
-              element={
-                <PublicLayout>
-                  <BookDemoForm />
-                </PublicLayout>
-              }
-            />
-
-            {/* Authentication routes */}
+            {/* Authentication Routes */}
             <Route path="/login" element={<Login />} />
-
             <Route path="/register" element={<Register />} />
-
             <Route path="/forgot-password" element={<ForgotPassword />} />
-
             <Route path="/reset-password" element={<ResetPassword />} />
 
-            {/* Super Admin login - separate from other roles */}
+            {/* Super Admin Login */}
             <Route path="/super-admin/login" element={<SuperAdminLogin />} />
 
-            {/* Protected Super Admin dashboard */}
-
+            {/* Protected Super Admin Routes */}
             <Route element={<ProtectedRoute />}>
               <Route element={<RoleRoute allowedRoles={["superAdmin"]} />}>
-                <Route
-                  path="/super-admin/dashboard"
-                  element={<SuperAdminDashboard />}
-                />
+                <Route path="/super-admin/dashboard" element={<SuperAdminDashboard />} />
+                <Route path="/super-admin/website-cms" element={<WebsiteHomeEditor />} />
               </Route>
             </Route>
 
-            {/* 404 fallback */}
+            {/* 404 Fallback Route */}
             <Route path="*" element={<NotFound />} />
+
           </Routes>
         </BrowserRouter>
       </AuthProvider>

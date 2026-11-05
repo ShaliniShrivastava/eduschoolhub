@@ -1,5 +1,7 @@
+
 import { useEffect, useState } from "react";
 import BookDemoForm from "../main-website-components/BookDemoForm";
+import apiClient from "../../../app-services/apiClient";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -13,7 +15,6 @@ import {
   ClipboardCheck,
   GraduationCap,
   LayoutDashboard,
-  Menu,
   School,
   ShieldCheck,
   Sparkles,
@@ -23,11 +24,7 @@ import {
   Bell,
   UserRound,
   Layers3,
-  X,
 } from "lucide-react";
-
-const API_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 const defaultContent = {
   brand: "EduSchoolHub",
@@ -178,7 +175,7 @@ const iconMap = {
   "✉": Bell,
 };
 
-const bannerSlides = [
+const defaultBannerSlides = [
   {
     eyebrow: "SMART SCHOOL MANAGEMENT",
     title: "One Platform. Every School Need.",
@@ -211,32 +208,40 @@ const bannerSlides = [
   },
 ];
 
-const latestNews = [
+const defaultLatestNews = [
   "Welcome to EduSchoolHub — your connected school management platform.",
   "Explore features for attendance, examinations, fees and student records.",
   "Want to see EduSchoolHub in action? Book a demo with our team.",
 ];
 
-function BannerCarousel({ onNavigate }) {
+function BannerCarousel({ slides, onNavigate }) {
   const [active, setActive] = useState(0);
 
   useEffect(() => {
+    setActive(0);
+  }, [slides.length]);
+
+  useEffect(() => {
+    if (slides.length <= 1) return;
+
     const timer = window.setInterval(() => {
-      setActive((current) => (current + 1) % bannerSlides.length);
+      setActive((current) => (current + 1) % slides.length);
     }, 5000);
 
     return () => window.clearInterval(timer);
-  }, []);
+  }, [slides.length]);
+
+  if (!slides.length) return null;
 
   const previous = () =>
     setActive(
-      (current) => (current - 1 + bannerSlides.length) % bannerSlides.length
+      (current) => (current - 1 + slides.length) % slides.length
     );
 
   const next = () =>
-    setActive((current) => (current + 1) % bannerSlides.length);
+    setActive((current) => (current + 1) % slides.length);
 
-  const slide = bannerSlides[active];
+  const slide = slides[active];
 
   return (
     <section
@@ -244,14 +249,18 @@ function BannerCarousel({ onNavigate }) {
       className="px-4 pt-5 sm:px-8 lg:px-10"
     >
       <div className="relative mx-auto max-w-7xl overflow-hidden rounded-3xl bg-slate-900 shadow-xl">
-        {bannerSlides.map((item, index) => (
+        {slides.map((item, index) => (
           <div
-            key={item.title}
+            key={item._id || `${item.title}-${index}`}
             aria-hidden={index !== active}
             className={`absolute inset-0 bg-cover bg-center transition-opacity duration-700 ${
               index === active ? "opacity-100" : "opacity-0"
             }`}
-            style={{ backgroundImage: `url("${item.image}")` }}
+            style={{
+              backgroundImage: item.image
+                ? `url("${item.image}")`
+                : undefined,
+            }}
           />
         ))}
 
@@ -264,68 +273,78 @@ function BannerCarousel({ onNavigate }) {
           <div className="max-w-2xl text-white">
             <span className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-2 text-[10px] font-bold tracking-[0.16em] sm:text-xs">
               <Sparkles size={14} />
-              {slide.eyebrow}
+              {slide.eyebrow || "EDUSCHOOLHUB"}
             </span>
 
             <h2 className="mt-6 text-3xl leading-tight font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
               {slide.title}
             </h2>
 
-            <p className="mt-5 max-w-xl text-sm leading-7 text-white/85 sm:text-base sm:leading-8">
-              {slide.description}
-            </p>
+            {slide.description && (
+              <p className="mt-5 max-w-xl text-sm leading-7 text-white/85 sm:text-base sm:leading-8">
+                {slide.description}
+              </p>
+            )}
 
-            <button
-              type="button"
-              onClick={() => onNavigate(slide.target)}
-              className="mt-7 inline-flex min-h-12 items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-blue-500"
-            >
-              {slide.button}
-              <ArrowRight size={18} />
-            </button>
+            {slide.button && (
+              <button
+                type="button"
+                onClick={() => onNavigate(slide.target || "book-demo")}
+                className="mt-7 inline-flex min-h-12 items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-blue-500"
+              >
+                {slide.button}
+                <ArrowRight size={18} />
+              </button>
+            )}
           </div>
         </div>
 
-        <button
-          type="button"
-          aria-label="Previous banner"
-          onClick={previous}
-          className="absolute left-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/25 text-white backdrop-blur transition hover:bg-black/50 sm:left-5 sm:h-12 sm:w-12"
-        >
-          <ChevronLeft size={23} />
-        </button>
-
-        <button
-          type="button"
-          aria-label="Next banner"
-          onClick={next}
-          className="absolute right-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/25 text-white backdrop-blur transition hover:bg-black/50 sm:right-5 sm:h-12 sm:w-12"
-        >
-          <ChevronRight size={23} />
-        </button>
-
-        <div className="absolute bottom-5 left-0 right-0 z-10 flex justify-center gap-2">
-          {bannerSlides.map((item, index) => (
+        {slides.length > 1 && (
+          <>
             <button
-              key={item.title}
               type="button"
-              aria-label={`Show banner ${index + 1}`}
-              aria-current={active === index ? "true" : undefined}
-              onClick={() => setActive(index)}
-              className={`h-2.5 rounded-full transition-all ${
-                active === index
-                  ? "w-8 bg-white"
-                  : "w-2.5 bg-white/50 hover:bg-white/80"
-              }`}
-            />
-          ))}
-        </div>
+              aria-label="Previous banner"
+              onClick={previous}
+              className="absolute left-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/25 text-white backdrop-blur transition hover:bg-black/50 sm:left-5 sm:h-12 sm:w-12"
+            >
+              <ChevronLeft size={23} />
+            </button>
+
+            <button
+              type="button"
+              aria-label="Next banner"
+              onClick={next}
+              className="absolute right-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/25 text-white backdrop-blur transition hover:bg-black/50 sm:right-5 sm:h-12 sm:w-12"
+            >
+              <ChevronRight size={23} />
+            </button>
+
+            <div className="absolute bottom-5 left-0 right-0 z-10 flex justify-center gap-2">
+              {slides.map((item, index) => (
+                <button
+                  key={item._id || `${item.title}-${index}`}
+                  type="button"
+                  aria-label={`Show banner ${index + 1}`}
+                  aria-current={active === index ? "true" : undefined}
+                  onClick={() => setActive(index)}
+                  className={`h-2.5 rounded-full transition-all ${
+                    active === index
+                      ? "w-8 bg-white"
+                      : "w-2.5 bg-white/50 hover:bg-white/80"
+                  }`}
+                />
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </section>
   );
 }
 
-function LatestNewsMarquee() {
+function LatestNewsMarquee({ news }) {
+  if (!news.length) return null;
+
   return (
     <section
       aria-label="Latest EduSchoolHub news"
@@ -348,13 +367,19 @@ function LatestNewsMarquee() {
             onMouseLeave={(event) => event.currentTarget.start()}
             aria-label="Scrolling latest news"
           >
-            {latestNews.map((news, index) => (
+            {news.map((item, index) => (
               <span
-                key={news}
+                key={item._id || `${item.title}-${index}`}
                 className="mx-5 inline-flex items-center gap-3"
               >
-                {index > 0 && <span className="text-blue-500">◆</span>}
-                <span>{news}</span>
+                {index > 0 && (
+                  <span className="text-blue-500">◆</span>
+                )}
+                <span>
+                  {item.description
+                    ? `${item.title} — ${item.description}`
+                    : item.title}
+                </span>
               </span>
             ))}
           </marquee>
@@ -622,66 +647,138 @@ function PortalCard({ icon: Icon, title, description, tone }) {
 
 export default function Home() {
   const [content, setContent] = useState(defaultContent);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [cmsContent, setCmsContent] = useState(null);
 
   useEffect(() => {
-    const controller = new AbortController();
+    let isMounted = true;
 
     async function loadSiteContent() {
       try {
-        const response = await fetch(`${API_URL}/public/site-content`, {
-          signal: controller.signal,
-          credentials: "include",
-        });
+        const response = await apiClient.get("/main-website/");
+        const publishedContent = response.data?.data;
 
-        if (!response.ok) return;
+        if (!isMounted || !publishedContent) return;
 
-        const result = await response.json();
-        const siteContent = result.content ?? result.data ?? result;
+        setCmsContent(publishedContent);
+
+        const hero = publishedContent.hero || {};
 
         setContent((previous) => ({
           ...previous,
-          ...siteContent,
-          stats: Array.isArray(siteContent.stats)
-            ? siteContent.stats
-            : previous.stats,
-          features: Array.isArray(siteContent.features)
-            ? siteContent.features
-            : previous.features,
-          modules: Array.isArray(siteContent.modules)
-            ? siteContent.modules
-            : previous.modules,
-          plans: Array.isArray(siteContent.plans)
-            ? siteContent.plans
-            : previous.plans,
+          ...(hero.title
+            ? { title: hero.title, highlight: "" }
+            : {}),
+          ...(hero.subtitle
+            ? { description: hero.subtitle }
+            : {}),
+          ...(hero.buttonText
+            ? { primaryButton: hero.buttonText }
+            : {}),
         }));
       } catch (error) {
-        if (error.name !== "AbortError") {
-          console.error("Homepage content:", error.message);
+        if (isMounted) {
+          console.error(
+            "Published homepage CMS content:",
+            error.response?.data?.message || error.message
+          );
         }
       }
     }
 
     loadSiteContent();
 
-    return () => controller.abort();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  const scrollTo = (id) => {
-    setMobileMenuOpen(false);
+  const scrollTo = (target) => {
+    if (!target) return;
 
-    document.getElementById(id)?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
+    const normalizedTarget = target.trim();
+
+    const sectionAliases = {
+      "/demo": "book-demo",
+      "/book-demo": "book-demo",
+      "demo": "book-demo",
+      "pricing": "pricing",
+      "features": "features",
+      "modules": "modules",
+      "contact": "contact",
+    };
+
+    const cleanTarget = normalizedTarget.replace(/^#/, "");
+    const sectionId =
+      sectionAliases[cleanTarget] ||
+      sectionAliases[`/${cleanTarget}`] ||
+      cleanTarget;
+
+    const section = document.getElementById(sectionId);
+
+    if (section) {
+      section.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+      return;
+    }
+
+    if (
+      normalizedTarget.startsWith("http://") ||
+      normalizedTarget.startsWith("https://")
+    ) {
+      window.location.assign(normalizedTarget);
+      return;
+    }
+
+    if (normalizedTarget.startsWith("/")) {
+      window.location.assign(normalizedTarget);
+      return;
+    }
+
+    const fallbackSection = document.getElementById(cleanTarget);
+
+    if (fallbackSection) {
+      fallbackSection.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
   };
 
-  const navigation = [
-    { label: "Home", id: "home" },
-    { label: "Features", id: "features" },
-    { label: "Modules", id: "modules" },
-    { label: "Pricing", id: "pricing" },
-  ];
+  const cmsBanners = (cmsContent?.banners || [])
+    .filter((item) => item && item.isVisible !== false)
+    .map((item) => ({
+      _id: item._id,
+      eyebrow: item.eyebrow || "EDUSCHOOLHUB",
+      title: item.title,
+      description: item.subtitle || item.description || "",
+      image: item.image,
+      button: item.buttonText,
+      target: item.buttonLink || "book-demo",
+    }))
+    .filter((item) => item.title && item.image);
+
+  const cmsHighlights = (cmsContent?.highlights || [])
+    .filter((item) => item && item.isVisible !== false && item.title)
+    .map((item) => ({
+      _id: item._id,
+      title: item.title,
+      description: item.description || "",
+    }));
+
+  const slides = cmsBanners.length
+    ? cmsBanners
+    : defaultBannerSlides;
+
+  const news = cmsHighlights.length
+    ? cmsHighlights
+    : defaultLatestNews.map((title, index) => ({
+        _id: `default-news-${index}`,
+        title,
+      }));
+
+  const heroImage = cmsContent?.hero?.image;
 
   return (
     <main
@@ -689,10 +786,10 @@ export default function Home() {
       className="min-h-screen overflow-hidden bg-white text-slate-800"
     >
       {/* Homepage banner slider */}
-      <BannerCarousel onNavigate={scrollTo} />
+      <BannerCarousel slides={slides} onNavigate={scrollTo} />
 
-      {/* Latest news ticker directly below the banners */}
-      <LatestNewsMarquee />
+      {/* Latest news ticker */}
+      <LatestNewsMarquee news={news} />
 
       {/* Main platform introduction */}
       <section className="scroll-mt-24 bg-gradient-to-br from-blue-50 via-white to-indigo-50">
@@ -704,9 +801,11 @@ export default function Home() {
               <h1 className="mt-7 max-w-2xl text-4xl leading-[1.13] font-extrabold tracking-tight text-slate-950 sm:text-5xl lg:text-[58px]">
                 {content.title}
 
-                <span className="mt-2 block bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text pb-1 text-transparent">
-                  {content.highlight}
-                </span>
+                {content.highlight && (
+                  <span className="mt-2 block bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text pb-1 text-transparent">
+                    {content.highlight}
+                  </span>
+                )}
               </h1>
 
               <p className="mt-6 max-w-xl text-base leading-8 text-slate-600 sm:text-lg">
@@ -716,7 +815,9 @@ export default function Home() {
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <button
                   type="button"
-                  onClick={() => scrollTo("pricing")}
+                  onClick={() =>
+                    scrollTo(cmsContent?.hero?.buttonLink || "pricing")
+                  }
                   className={`${primaryButton} w-full sm:w-auto`}
                 >
                   {content.primaryButton}
@@ -761,7 +862,18 @@ export default function Home() {
               </div>
             </div>
 
-            <DashboardPreview brand={content.brand} />
+            {heroImage ? (
+              <div className="relative mx-auto w-full max-w-xl">
+                <div className="absolute -inset-5 rounded-[35px] bg-gradient-to-br from-blue-200/60 via-indigo-100/40 to-violet-200/60 blur-2xl" />
+                <img
+                  src={heroImage}
+                  alt="EduSchoolHub school management platform"
+                  className="relative max-h-[520px] w-full rounded-3xl border border-slate-200 bg-white object-cover shadow-2xl shadow-slate-900/10"
+                />
+              </div>
+            ) : (
+              <DashboardPreview brand={content.brand} />
+            )}
           </div>
         </div>
       </section>
