@@ -327,8 +327,8 @@ npm run dev
 - Contact Enquiry backend code updated.
 - Both API routes configured in `server.js`.
 
-
 3 November 2026,
+
 # EduSchoolHub – Main Website Backend Updates
 
 **Date:** 3 November 2026
@@ -340,6 +340,7 @@ npm run dev
 - Existing controller functions aur middleware preserve kiye hain.
 
 **Updated Structure:**
+
 ```text
 server/
 └── routes/
@@ -365,12 +366,12 @@ Following pages ke APIs configure kiye:
 
 Home, About, Features, Modules aur Pricing ke liye:
 
-| Method | Purpose |
-|---|---|
-| GET | Public published content |
-| GET | Admin content |
-| PUT | Save draft |
-| PATCH | Publish draft |
+| Method | Purpose                  |
+| ------ | ------------------------ |
+| GET    | Public published content |
+| GET    | Admin content            |
+| PUT    | Save draft               |
+| PATCH  | Publish draft            |
 
 ### Contact APIs
 
@@ -408,8 +409,8 @@ app.use("/api/main-website", mainWebsiteRoutes);
 
 **Current Progress:** Main Website routes consolidated, `server.js` updated
 
-
 4/11/26
+
 ## Main Website Backend – API Development & Testing
 
 Today, the Main Website backend APIs were completed and tested for the following sections:
@@ -423,7 +424,67 @@ Today, the Main Website backend APIs were completed and tested for the following
 - **Demo:** Create Demo Request, Get Demo Requests, Update Demo Request.
 
 ### Key Implementation
+
 - Implemented Draft–Review–Publish workflow for website content.
 - Added Super Admin authentication for admin APIs.
 - Added contact enquiry and demo request management.
 - Tested all listed APIs successfully using Postman.
+
+---
+
+# 12 November 2026 – Remember Me & Backend Session Management
+
+## 1. Remember Me Authentication
+
+- Added Remember Me support to the existing email/password authentication flow.
+- Supports the `rememberMe` Boolean field during login.
+- When `rememberMe: true` is selected, the backend issues a Refresh Token valid for 7 days.
+- When Remember Me is disabled, the Refresh Token has a 12-hour JWT expiry.
+- Access Token validity is 15 minutes.
+- Authentication tokens are stored in HTTP-only cookies.
+- Secure cookie settings are configured according to the deployment environment.
+
+## 2. Session Management APIs
+
+| Method | Endpoint            | Purpose                                                            |
+| ------ | ------------------- | ------------------------------------------------------------------ |
+| POST   | `/api/auth/refresh` | Generate a new Access Token using the Refresh Token                |
+| GET    | `/api/auth/me`      | Verify the current session and retrieve authenticated user details |
+| POST   | `/api/auth/logout`  | Clear Access Token and Refresh Token cookies                       |
+
+## 3. Session Refresh Workflow
+
+- The backend verifies the Refresh Token using `JWT_REFRESH_SECRET`.
+- Validates the token type, user ID, account status and user role.
+- Generates a new Access Token after successful verification.
+- Preserves the Remember Me setting while generating the new Access Token.
+- Returns an authentication error if the Refresh Token is missing, expired or invalid.
+
+**Note:** Refresh Token expiry is fixed from the original login time. Refreshing the Access Token does not extend the Refresh Token's 7-day validity.
+
+## 4. Authentication Cookie Management
+
+- Access Token and Refresh Token use HTTP-only cookies.
+- Production cookies use `Secure` and `SameSite=None`.
+- Local development cookies use `SameSite=Lax`.
+- Cookie expiration is configured according to the Remember Me setting.
+- Logout clears both authentication cookies.
+
+## 5. Backend Testing – Postman
+
+The following tests have been performed:
+
+- Super Admin login with `rememberMe: true` – Successful.
+- Access Token and Refresh Token cookie generation – Verified.
+- Remember Me refresh API (`POST /api/auth/refresh`) – Successful.
+- Session verification (`GET /api/auth/me`) – Successful.
+- Logout and cookie-clearing verification – Pending.
+
+## 6. Current Development Status
+
+- Remember Me login logic implemented.
+- Refresh Token generation and verification configured.
+- Access Token renewal API configured.
+- Current user session verification API configured.
+- Logout API configured to clear authentication cookies.
+- Postman login, refresh and session verification tested successfully.

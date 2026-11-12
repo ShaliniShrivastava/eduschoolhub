@@ -33,7 +33,7 @@ const authMiddleware = async (req, res, next) => {
 
     const userId = decoded.userId || decoded.sub;
 
-    if (!userId) {
+    if (!userId || decoded.tokenType !== "access") {
       clearAccessCookie(res);
 
       return res.status(401).json({
@@ -69,20 +69,25 @@ const authMiddleware = async (req, res, next) => {
 
     return next();
   } catch (error) {
+    // Expired access token: preserve refresh token for session renewal.
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({
+        success: false,
+        message: "Access token expired. Refresh session required.",
+        code: "SESSION_EXPIRED",
+      });
+    }
+
+    // Invalid access token: clear both cookies.
     if (
-      [
-        "JsonWebTokenError",
-        "TokenExpiredError",
-        "NotBeforeError",
-        "CastError",
-      ].includes(error.name)
+      ["JsonWebTokenError", "NotBeforeError", "CastError"].includes(error.name)
     ) {
       clearAccessCookie(res);
 
       return res.status(401).json({
         success: false,
-        message: "Invalid or expired token",
-        code: "SESSION_EXPIRED",
+        message: "Invalid token",
+        code: "INVALID_TOKEN",
       });
     }
 
