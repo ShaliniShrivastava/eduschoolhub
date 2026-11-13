@@ -14,7 +14,17 @@ const authMiddleware = async (req, res, next) => {
         message: "Server configuration error",
       });
     }
+    console.log("Cookie header present:", Boolean(req.headers.cookie));
 
+    console.log(
+      "Cookie names:",
+      (req.headers.cookie || "")
+        .split(";")
+        .map((item) => item.split("=")[0].trim())
+        .filter(Boolean),
+    );
+
+    console.log("Parsed cookies:", Object.keys(req.cookies || {}));
     const token = req.cookies?.accessToken;
 
     if (!token) {

@@ -1,4 +1,3 @@
-
 const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema(
@@ -42,6 +41,17 @@ const userSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "School",
       default: null,
+    },
+
+    phone: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    profileImage: {
+      type: String,
+      default: "",
     },
 
     // Account security
@@ -102,11 +112,11 @@ const userSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // A Google identity can belong to only one user.
-// Password-only users may have googleId: null.
+
 userSchema.index(
   { googleId: 1 },
   {
@@ -114,7 +124,7 @@ userSchema.index(
     partialFilterExpression: {
       googleId: { $type: "string" },
     },
-  }
+  },
 );
 
 module.exports = mongoose.model("User", userSchema);

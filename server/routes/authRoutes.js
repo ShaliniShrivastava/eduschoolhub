@@ -30,6 +30,11 @@ router.post("/refresh", AuthController.refreshSession);
 // Get current authenticated user
 router.get("/me", authMiddleware, AuthController.getCurrentUser);
 
+// Update user profile
+router.put("/profile", authMiddleware, AuthController.updateProfile);
+
+router.put("/change-password", authMiddleware, AuthController.changePassword);
+
 // Logout
 router.post("/logout", AuthController.logout);
 

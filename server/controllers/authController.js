@@ -1,4 +1,3 @@
-
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
@@ -22,6 +21,7 @@ const OTP_EXPIRY = 10 * 60 * 1000;
 const OTP_MAX_ATTEMPTS = 5;
 
 // Never return passwords, Google IDs, or security hashes.
+
 function publicUser(user) {
   return {
     id: user._id,
@@ -29,15 +29,15 @@ function publicUser(user) {
     email: user.email,
     role: user.role,
     schoolId: user.schoolId,
+    phone: user.phone || "",
+    profileImage: user.profileImage || "",
     isFirstLogin: user.isFirstLogin,
     isProfileComplete: user.isProfileComplete,
   };
 }
 
 function isAccountLocked(user) {
-  return Boolean(
-    user.lockUntil && user.lockUntil.getTime() > Date.now()
-  );
+  return Boolean(user.lockUntil && user.lockUntil.getTime() > Date.now());
 }
 
 function clearExpiredLock(user) {
@@ -50,11 +50,9 @@ function clearExpiredLock(user) {
 function validatePassword(password) {
   const errors = [];
 
-  if (password.length < 8) errors.push("at least 8 characters");
-  if (!/[A-Z]/.test(password)) errors.push("an uppercase letter");
-  if (!/[a-z]/.test(password)) errors.push("a lowercase letter");
-  if (!/[0-9]/.test(password)) errors.push("a number");
-  if (!/[^A-Za-z0-9]/.test(password)) errors.push("a special character");
+  if (password.length < 8) {
+    errors.push("at least 8 characters");
+  }
 
   return errors;
 }
@@ -82,10 +80,7 @@ async function verifyPassword(user, password) {
     return {
       locked: isAccountLocked(user),
       valid: false,
-      attemptsRemaining: Math.max(
-        0,
-        MAX_ATTEMPTS - user.failedLoginAttempts
-      ),
+      attemptsRemaining: Math.max(0, MAX_ATTEMPTS - user.failedLoginAttempts),
     };
   }
 
@@ -532,11 +527,11 @@ const forgotPassword = async (req, res) => {
 
     const genericResponse = {
       success: true,
-      message: "If the account exists, an OTP will be sent.",
+      message: "OTP was sent.",
     };
 
     const user = await User.findOne({ email }).select(
-      "+otpHash +otpExpiry +otpAttempts"
+      "+otpHash +otpExpiry +otpAttempts",
     );
 
     if (!user) {
@@ -641,10 +636,7 @@ const resetPassword = async (req, res) => {
       });
     }
 
-    const submittedHash = crypto
-      .createHash("sha256")
-      .update(otp)
-      .digest();
+    const submittedHash = crypto.createHash("sha256").update(otp).digest();
 
     const storedHash = Buffer.from(user.otpHash, "hex");
 
@@ -659,10 +651,7 @@ const resetPassword = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Invalid or expired OTP.",
-        attemptsRemaining: Math.max(
-          0,
-          OTP_MAX_ATTEMPTS - user.otpAttempts
-        ),
+        attemptsRemaining: Math.max(0, OTP_MAX_ATTEMPTS - user.otpAttempts),
       });
     }
 
@@ -705,6 +694,179 @@ const getCurrentUser = async (req, res) => {
   });
 };
 
+const updateProfile = async (req, res) => {
+  try {
+    if (!req.user || req.user.isActive !== true) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required.",
+      });
+    }
+
+    const allowedFields = ["name", "phone", "profileImage"];
+    const receivedFields = Object.keys(req.body);
+
+    const invalidFields = receivedFields.filter(
+      (field) => !allowedFields.includes(field),
+    );
+
+    if (invalidFields.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid profile fields.",
+      });
+    }
+
+    const user = await User.findById(req.user._id);
+
+    if (!user || user.isActive !== true) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
+
+    if (req.body.name !== undefined) {
+      if (typeof req.body.name !== "string" || !req.body.name.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: "Name is required.",
+        });
+      }
+
+      user.name = req.body.name.trim();
+    }
+
+    if (req.body.phone !== undefined) {
+      if (typeof req.body.phone !== "string") {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid phone number.",
+        });
+      }
+
+      user.phone = req.body.phone.trim();
+    }
+
+    if (req.body.profileImage !== undefined) {
+      if (typeof req.body.profileImage !== "string") {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid profile image.",
+        });
+      }
+
+      user.profileImage = req.body.profileImage.trim();
+    }
+
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile updated successfully.",
+      user: publicUser(user),
+    });
+  } catch (error) {
+    console.error("Update Profile Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to update profile.",
+    });
+  }
+};
+
+const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword, confirmPassword } = req.body || {};
+
+    if (
+      typeof currentPassword !== "string" ||
+      typeof newPassword !== "string" ||
+      typeof confirmPassword !== "string" ||
+      !currentPassword ||
+      !newPassword ||
+      !confirmPassword
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "All password fields are required.",
+      });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "New password and confirm password do not match.",
+      });
+    }
+
+    const passwordErrors = validatePassword(newPassword);
+
+    if (passwordErrors.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Password must contain ${passwordErrors.join(", ")}.`,
+      });
+    }
+
+    const user = await User.findById(req.user._id).select("+password");
+
+    if (!user || user.isActive !== true) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
+
+    if (!user.password) {
+      return res.status(400).json({
+        success: false,
+        message: "Password is not set for this account. Use forgot password.",
+      });
+    }
+
+    const isCurrentPasswordValid = await bcrypt.compare(
+      currentPassword,
+      user.password,
+    );
+
+    if (!isCurrentPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        message: "Current password is incorrect.",
+      });
+    }
+
+    const isSamePassword = await bcrypt.compare(newPassword, user.password);
+
+    if (isSamePassword) {
+      return res.status(400).json({
+        success: false,
+        message: "New password must be different from current password.",
+      });
+    }
+
+    user.password = await bcrypt.hash(newPassword, 12);
+
+    await user.save();
+
+    clearAccessCookie(res);
+
+    return res.status(200).json({
+      success: true,
+      message: "Password changed successfully. Please login again.",
+    });
+  } catch (error) {
+    console.error("Change Password Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to change password.",
+    });
+  }
+};
+
 // Renew access token using the refresh token cookie.
 const refreshSession = async (req, res) => {
   const refreshToken = req.cookies?.refreshToken;
@@ -722,11 +884,7 @@ const refreshSession = async (req, res) => {
     const decoded = verifyRefreshToken(refreshToken);
     const user = await User.findById(decoded.userId);
 
-    if (
-      !user ||
-      user.isActive !== true ||
-      user.role !== decoded.role
-    ) {
+    if (!user || user.isActive !== true || user.role !== decoded.role) {
       clearAccessCookie(res);
 
       return res.status(401).json({
@@ -738,11 +896,7 @@ const refreshSession = async (req, res) => {
     const rememberMe = decoded.rememberMe === true;
     const accessToken = createAccessToken(user);
 
-    res.cookie(
-      "accessToken",
-      accessToken,
-      getAccessCookieOptions(rememberMe)
-    );
+    res.cookie("accessToken", accessToken, getAccessCookieOptions(rememberMe));
 
     return res.status(200).json({
       success: true,
@@ -790,6 +944,8 @@ module.exports = {
   googleLogin,
   linkGoogleAccount,
   getCurrentUser,
+  updateProfile,
+  changePassword,
   refreshSession,
   logout,
   forgotPassword,
