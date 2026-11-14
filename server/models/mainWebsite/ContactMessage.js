@@ -2,6 +2,13 @@ const mongoose = require("mongoose");
 
 const contactMessageSchema = new mongoose.Schema(
   {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
+
     fullName: {
       type: String,
       required: true,
@@ -60,10 +67,19 @@ const contactMessageSchema = new mongoose.Schema(
       trim: true,
       maxlength: 3000,
     },
+
     status: {
       type: String,
-      enum: ["new", "in-progress", "resolved"],
-      default: "new",
+      enum: ["submitted", "seen", "replied"],
+      default: "submitted",
+    },
+    seenAt: {
+      type: Date,
+      default: null,
+    },
+    repliedAt: {
+      type: Date,
+      default: null,
     },
   },
   {

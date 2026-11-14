@@ -4,8 +4,36 @@ const { sendEmail } = require("../../services/emailService");
 
 const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+const validStrengths = [
+  "Below 200",
+  "200-500",
+  "500-1000",
+  "1000-2000",
+  "Above 2000",
+];
+
+function escapeHtml(value = "") {
+  return String(value).replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  })[char]);
+}
+
+// Submit Demo Request
 async function createDemoRequest(req, res) {
   try {
+    if (!req.user || req.user.role === "superAdmin") {
+      return res.status(req.user ? 403 : 401).json({
+        success: false,
+        message: req.user
+          ? "Super Admin cannot submit demo requests."
+          : "Authentication required.",
+      });
+    }
+
     const {
       schoolName,
       contactName,
@@ -44,14 +72,6 @@ async function createDemoRequest(req, res) {
       });
     }
 
-    const validStrengths = [
-      "Below 200",
-      "200-500",
-      "500-1000",
-      "1000-2000",
-      "Above 2000",
-    ];
-
     if (!validStrengths.includes(finalStudentCount.trim())) {
       return res.status(400).json({
         success: false,
@@ -63,6 +83,17 @@ async function createDemoRequest(req, res) {
       return res.status(400).json({
         success: false,
         message: "Please select a valid demo preference.",
+      });
+    }
+
+    if (
+      typeof message !== "string" ||
+      message.length > 1000 ||
+      typeof preferredTime !== "string"
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid message or preferred time.",
       });
     }
 
@@ -79,8 +110,9 @@ async function createDemoRequest(req, res) {
       }
     }
 
-    // Save request before sending notification email.
+    // Save demo request with logged-in user's ID.
     const demoRequest = await DemoRequest.create({
+      userId: req.user._id,
       schoolName: schoolName.trim(),
       contactName: finalContactName.trim(),
       email: email.trim().toLowerCase(),
@@ -89,12 +121,14 @@ async function createDemoRequest(req, res) {
       role: role.trim(),
       preference,
       preferredDate: requestedDate,
-      preferredTime,
-      message,
+      preferredTime: preferredTime.trim(),
+      message: message.trim(),
+      status: "pending",
     });
 
     let emailSent = false;
 
+    // Send notification email to Super Admin.
     try {
       const adminEmail = process.env.SUPER_ADMIN_EMAIL;
 
@@ -114,7 +148,9 @@ async function createDemoRequest(req, res) {
           `Students: ${demoRequest.studentCount}`,
           `Designation: ${demoRequest.role || "Not specified"}`,
           `Preference: ${demoRequest.preference}`,
-          `Preferred date: ${demoRequest.preferredDate || "Not specified"}`,
+          `Preferred date: ${
+            demoRequest.preferredDate || "Not specified"
+          }`,
           `Preferred time: ${demoRequest.preferredTime || "Not specified"}`,
           `Message: ${demoRequest.message || "None"}`,
           `Request ID: ${demoRequest._id}`,
@@ -146,7 +182,10 @@ async function createDemoRequest(req, res) {
         { $set: { emailNotificationSent: true } }
       );
     } catch (emailError) {
-      console.error("Demo notification email failed:", emailError.message);
+      console.error(
+        "Demo notification email failed:",
+        emailError.message
+      );
     }
 
     return res.status(201).json({
@@ -169,18 +208,16 @@ async function createDemoRequest(req, res) {
   }
 }
 
-function escapeHtml(value = "") {
-  return String(value).replace(/[&<>"']/g, (char) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;",
-  })[char]);
-}
-
+// Get All Demo Requests - Super Admin
 async function getDemoRequests(req, res) {
   try {
+    if (!req.user || req.user.role !== "superAdmin") {
+      return res.status(req.user ? 403 : 401).json({
+        success: false,
+        message: "You do not have permission.",
+      });
+    }
+
     const requests = await DemoRequest.find()
       .sort({ createdAt: -1 })
       .lean();
@@ -199,12 +236,104 @@ async function getDemoRequests(req, res) {
   }
 }
 
+// Get My Demo Requests - Logged-in User
+async function getMyDemoRequests(req, res) {
+  try {
+    if (!req.user || req.user.role === "superAdmin") {
+      return res.status(req.user ? 403 : 401).json({
+        success: false,
+        message: "You do not have permission.",
+      });
+    }
+
+    const requests = await DemoRequest.find({
+      userId: req.user._id,
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return res.status(200).json({
+      success: true,
+      data: requests,
+    });
+  } catch (error) {
+    console.error("Get my demo requests error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to load your demo requests.",
+    });
+  }
+}
+
+// Get Demo Request By ID
+async function getDemoRequestById(req, res) {
+  try {
+    const request = await DemoRequest.findById(req.params.id);
+
+    if (!request) {
+      return res.status(404).json({
+        success: false,
+        message: "Demo request not found.",
+      });
+    }
+
+    const isSuperAdmin = req.user?.role === "superAdmin";
+    const isOwner =
+      request.userId &&
+      request.userId.toString() === req.user?._id?.toString();
+
+    if (!isSuperAdmin && !isOwner) {
+      return res.status(req.user ? 403 : 401).json({
+        success: false,
+        message: "You do not have permission to view this request.",
+      });
+    }
+
+    // Automatically mark as seen when Super Admin opens it.
+    if (isSuperAdmin && request.status === "pending") {
+      request.status = "seen";
+      request.seenAt = new Date();
+      await request.save();
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: request,
+    });
+  } catch (error) {
+    if (error.name === "CastError") {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid demo request ID.",
+      });
+    }
+
+    console.error("Get demo request by ID error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to load demo request.",
+    });
+  }
+}
+
+
+// Update Demo Request - Super Admin
 async function updateDemoRequest(req, res) {
   try {
+    if (!req.user || req.user.role !== "superAdmin") {
+      return res.status(req.user ? 403 : 401).json({
+        success: false,
+        message: "You do not have permission.",
+      });
+    }
+
     const { status, scheduledAt, adminNotes } = req.body;
 
     const allowedStatuses = [
       "pending",
+      "seen",
       "contacted",
       "scheduled",
       "completed",
@@ -242,14 +371,24 @@ async function updateDemoRequest(req, res) {
     }
 
     if (adminNotes !== undefined) {
-      if (typeof adminNotes !== "string" || adminNotes.length > 2000) {
+      if (
+        typeof adminNotes !== "string" ||
+        adminNotes.length > 2000
+      ) {
         return res.status(400).json({
           success: false,
           message: "Admin notes must be 2000 characters or fewer.",
         });
       }
 
-      updates.adminNotes = adminNotes;
+      updates.adminNotes = adminNotes.trim();
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No valid fields provided for update.",
+      });
     }
 
     const request = await DemoRequest.findByIdAndUpdate(
@@ -267,10 +406,17 @@ async function updateDemoRequest(req, res) {
 
     return res.status(200).json({
       success: true,
-      message: "Demo request updated.",
+      message: "Demo request updated successfully.",
       data: request,
     });
   } catch (error) {
+    if (error.name === "CastError") {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid demo request ID.",
+      });
+    }
+
     console.error("Update demo request error:", error);
 
     return res.status(500).json({
@@ -280,8 +426,51 @@ async function updateDemoRequest(req, res) {
   }
 }
 
+// Delete Demo Request - Super Admin
+async function deleteDemoRequest(req, res) {
+  try {
+    if (!req.user || req.user.role !== "superAdmin") {
+      return res.status(req.user ? 403 : 401).json({
+        success: false,
+        message: "You do not have permission.",
+      });
+    }
+
+    const request = await DemoRequest.findByIdAndDelete(req.params.id);
+
+    if (!request) {
+      return res.status(404).json({
+        success: false,
+        message: "Demo request not found.",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Demo request deleted successfully.",
+    });
+  } catch (error) {
+    if (error.name === "CastError") {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid demo request ID.",
+      });
+    }
+
+    console.error("Delete demo request error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to delete demo request.",
+    });
+  }
+}
+
 module.exports = {
   createDemoRequest,
   getDemoRequests,
+  getMyDemoRequests,
+  getDemoRequestById,
   updateDemoRequest,
+  deleteDemoRequest,
 };

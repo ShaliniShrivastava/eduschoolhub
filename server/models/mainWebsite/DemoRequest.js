@@ -2,18 +2,27 @@ const mongoose = require("mongoose");
 
 const demoRequestSchema = new mongoose.Schema(
   {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
+
     schoolName: {
       type: String,
       required: true,
       trim: true,
       maxlength: 150,
     },
+
     contactName: {
       type: String,
       required: true,
       trim: true,
       maxlength: 100,
     },
+
     email: {
       type: String,
       required: true,
@@ -21,63 +30,90 @@ const demoRequestSchema = new mongoose.Schema(
       lowercase: true,
       maxlength: 254,
     },
+
     phone: {
       type: String,
       required: true,
       trim: true,
       maxlength: 20,
     },
+
     studentCount: {
       type: String,
       required: true,
       trim: true,
+      enum: ["Below 200", "200-500", "500-1000", "1000-2000", "Above 2000"],
     },
+
     role: {
       type: String,
       trim: true,
       default: "",
       maxlength: 50,
     },
+
     preference: {
       type: String,
       enum: ["Online", "Offline", ""],
       default: "Online",
     },
+
     preferredDate: {
       type: Date,
       default: null,
     },
+
     preferredTime: {
       type: String,
       default: "",
       trim: true,
     },
+
     message: {
       type: String,
       default: "",
       trim: true,
       maxlength: 1000,
     },
+
     status: {
       type: String,
-      enum: ["pending", "contacted", "scheduled", "completed", "cancelled"],
+      enum: [
+        "pending",
+        "seen",
+        "contacted",
+        "scheduled",
+        "completed",
+        "cancelled",
+      ],
       default: "pending",
+      index: true,
     },
+
+    seenAt: {
+      type: Date,
+      default: null,
+    },
+
     scheduledAt: {
       type: Date,
       default: null,
     },
+
     adminNotes: {
       type: String,
       default: "",
       maxlength: 2000,
     },
+
     emailNotificationSent: {
       type: Boolean,
       default: false,
     },
   },
-  { timestamps: true },
+  {
+    timestamps: true,
+  },
 );
 
 module.exports =

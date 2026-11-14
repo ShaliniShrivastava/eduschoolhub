@@ -1,20 +1,15 @@
-
 const mongoose = require("mongoose");
 
 const mainWebsiteContentSchema = new mongoose.Schema(
   {
+    // Main Website page name
     page: {
       type: String,
       required: true,
       unique: true,
-      enum: [
-        "home",
-        "about",
-        "features",
-        "modules",
-        "pricing",
-      ],
+      enum: ["home", "about", "features", "modules", "pricing"],
       trim: true,
+      lowercase: true,
     },
 
     // Content saved by Super Admin but not published
@@ -45,10 +40,9 @@ const mainWebsiteContentSchema = new mongoose.Schema(
   {
     timestamps: true,
     versionKey: false,
-  }
+  },
 );
 
-module.exports = mongoose.model(
-  "MainWebsiteContent",
-  mainWebsiteContentSchema
-);
+module.exports =
+  mongoose.models.MainWebsiteContent ||
+  mongoose.model("MainWebsiteContent", mainWebsiteContentSchema);

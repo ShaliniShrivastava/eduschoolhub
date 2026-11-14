@@ -1,7 +1,6 @@
+
 const ContactMessage = require("../../models/mainWebsite/ContactMessage");
 const { sendEmail } = require("../../services/emailService");
-
-
 
 const allowedRoles = [
   "School Owner",
@@ -20,10 +19,10 @@ const allowedStudentCounts = [
 ];
 
 const allowedPlans = ["", "Starter", "Professional", "Enterprise"];
-
 const allowedBillingCycles = ["monthly", "yearly", "custom"];
 
-const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+const isValidEmail = (email) =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
 const escapeHtml = (value) =>
   String(value).replace(/[&<>"']/g, (char) => {
@@ -38,8 +37,23 @@ const escapeHtml = (value) =>
     return entities[char];
   });
 
-async function submitContactEnquiry(req, res) {
+// Logged-in users can submit enquiries. Super Admin cannot submit enquiries.
+const submitContactEnquiry = async (req, res) => {
   try {
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required.",
+      });
+    }
+
+    if (req.user.role === "superAdmin") {
+      return res.status(403).json({
+        success: false,
+        message: "Super Admin cannot submit contact enquiries.",
+      });
+    }
+
     const {
       fullName,
       schoolName,
@@ -146,9 +160,13 @@ async function submitContactEnquiry(req, res) {
       });
     }
 
-    // Save enquiry before attempting email delivery.
-    const enquiry = await ContactMessage.create(cleanData);
+    // Save enquiry with logged-in user's ID.
+    const enquiry = await ContactMessage.create({
+      ...cleanData,
+      userId: req.user._id,
+    });
 
+    // Send email notification to Super Admin.
     const receiverEmail = process.env.SUPER_ADMIN_EMAIL;
 
     if (receiverEmail) {
@@ -157,7 +175,7 @@ async function submitContactEnquiry(req, res) {
           Object.entries(cleanData).map(([key, value]) => [
             key,
             escapeHtml(value),
-          ]),
+          ])
         );
 
         await sendEmail({
@@ -189,11 +207,14 @@ async function submitContactEnquiry(req, res) {
           `,
         });
       } catch (emailError) {
-        console.error("Contact enquiry email failed:", emailError.message);
+        console.error(
+          "Contact enquiry email failed:",
+          emailError.message
+        );
       }
     } else {
       console.warn(
-        "SUPER_ADMIN_EMAIL is not configured; enquiry saved without email notification.",
+        "SUPER_ADMIN_EMAIL is not configured; enquiry saved without email notification."
       );
     }
 
@@ -203,16 +224,19 @@ async function submitContactEnquiry(req, res) {
       enquiryId: enquiry._id,
     });
   } catch (error) {
-    console.error("Contact enquiry submission failed:", error.message);
+    console.error(
+      "Contact enquiry submission failed:",
+      error.message
+    );
 
     return res.status(500).json({
       success: false,
-      message:
-        "Unable to submit your enquiry right now. Please try again later.",
+      message: "Unable to submit your enquiry right now. Please try again later.",
     });
   }
-}
+};
 
+// Super Admin: Get all contact enquiries.
 const getContactEnquiries = async (req, res) => {
   try {
     const enquiries = await ContactMessage.find()
@@ -233,7 +257,119 @@ const getContactEnquiries = async (req, res) => {
   }
 };
 
+// User: Get only their own contact enquiries.
+const getMyContactEnquiries = async (req, res) => {
+  try {
+    const enquiries = await ContactMessage.find({
+      userId: req.user._id,
+    }).sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      count: enquiries.length,
+      data: enquiries,
+    });
+  } catch (error) {
+    console.error("User contact enquiries fetch failed:", error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to fetch your contact enquiries.",
+    });
+  }
+};
+
+// Get individual enquiry.
+// Super Admin opening it automatically changes status to seen.
+// User can only view their own enquiry.
+const getContactEnquiryById = async (req, res) => {
+  try {
+    const enquiry = await ContactMessage.findById(req.params.id);
+
+    if (!enquiry) {
+      return res.status(404).json({
+        success: false,
+        message: "Contact enquiry not found.",
+      });
+    }
+
+    const isSuperAdmin = req.user.role === "superAdmin";
+    const isOwner =
+      enquiry.userId.toString() === req.user._id.toString();
+
+    if (!isSuperAdmin && !isOwner) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to view this enquiry.",
+      });
+    }
+
+    if (isSuperAdmin && enquiry.status === "submitted") {
+      enquiry.status = "seen";
+      enquiry.seenAt = new Date();
+      await enquiry.save();
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: enquiry,
+    });
+  } catch (error) {
+    if (error.name === "CastError") {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid contact enquiry ID.",
+      });
+    }
+
+    console.error("Contact enquiry fetch failed:", error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to fetch contact enquiry.",
+    });
+  }
+};
+
+// Super Admin: Delete contact enquiry.
+const deleteContactEnquiry = async (req, res) => {
+  try {
+    const enquiry = await ContactMessage.findByIdAndDelete(
+      req.params.id
+    );
+
+    if (!enquiry) {
+      return res.status(404).json({
+        success: false,
+        message: "Contact enquiry not found.",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Contact enquiry deleted successfully.",
+    });
+  } catch (error) {
+    if (error.name === "CastError") {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid contact enquiry ID.",
+      });
+    }
+
+    console.error("Contact enquiry deletion failed:", error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to delete contact enquiry.",
+    });
+  }
+};
+
 module.exports = {
   submitContactEnquiry,
   getContactEnquiries,
+  getMyContactEnquiries,
+  getContactEnquiryById,
+  deleteContactEnquiry,
 };
