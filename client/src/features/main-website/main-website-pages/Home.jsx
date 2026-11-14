@@ -345,48 +345,50 @@ function BannerCarousel({ slides, onNavigate }) {
 function LatestNewsMarquee({ news }) {
   if (!news.length) return null;
 
-  return (
-    <section
-      aria-label="Latest EduSchoolHub news"
-      className="px-4 pt-4 sm:px-8 lg:px-10"
-    >
-      <div className="mx-auto flex max-w-7xl items-center gap-3 overflow-hidden rounded-xl border border-blue-100 bg-blue-50 px-3 py-3 sm:px-5">
-        <div className="flex shrink-0 items-center gap-2 rounded-lg bg-blue-600 px-2.5 py-2 text-white sm:px-3">
-          <Megaphone size={16} />
-          <span className="text-[10px] font-extrabold tracking-wider sm:text-xs">
-            LATEST NEWS
-          </span>
-        </div>
-
-        <div className="min-w-0 flex-1 overflow-hidden text-sm font-medium text-slate-700">
-          <marquee
-            direction="left"
-            behavior="scroll"
-            scrollAmount={5}
-            onMouseEnter={(event) => event.currentTarget.stop()}
-            onMouseLeave={(event) => event.currentTarget.start()}
-            aria-label="Scrolling latest news"
-          >
-            {news.map((item, index) => (
-              <span
-                key={item._id || `${item.title}-${index}`}
-                className="mx-5 inline-flex items-center gap-3"
-              >
-                {index > 0 && (
-                  <span className="text-blue-500">◆</span>
-                )}
-                <span>
-                  {item.description
-                    ? `${item.title} — ${item.description}`
-                    : item.title}
-                </span>
-              </span>
-            ))}
-          </marquee>
-        </div>
+  
+return (
+  <section
+    aria-label="Latest EduSchoolHub news"
+    className="px-4 pt-4 sm:px-8 lg:px-10"
+  >
+    <div className="mx-auto flex max-w-7xl items-center gap-3 overflow-hidden rounded-xl border border-blue-100 bg-blue-50 px-3 py-3 sm:px-5">
+      <div className="flex shrink-0 items-center gap-2 rounded-lg bg-blue-600 px-2.5 py-2 text-white sm:px-3">
+        <Megaphone size={16} />
+        <span className="text-[10px] font-extrabold tracking-wider sm:text-xs">
+          LATEST NEWS
+        </span>
       </div>
-    </section>
-  );
+
+      <div className="min-w-0 flex-1 overflow-hidden text-sm font-medium text-slate-700">
+        <marquee
+          direction="left"
+          behavior="scroll"
+          scrollamount="5"
+          onMouseEnter={(event) => event.currentTarget.stop()}
+          onMouseLeave={(event) => event.currentTarget.start()}
+          aria-label="Scrolling latest news"
+        >
+          {news.map((item, index) => (
+            <span
+              key={item._id || `${item.title}-${index}`}
+              className="mx-5 inline-flex items-center gap-3"
+            >
+              {index > 0 && (
+                <span className="text-blue-500">◆</span>
+              )}
+              <span>
+                {item.description
+                  ? `${item.title} — ${item.description}`
+                  : item.title}
+              </span>
+            </span>
+          ))}
+        </marquee>
+      </div>
+    </div>
+  </section>
+);
+
 }
 
 function SectionBadge({ children }) {

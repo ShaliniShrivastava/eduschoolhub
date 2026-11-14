@@ -5,9 +5,10 @@ import {
   CheckCircle2,
   LoaderCircle,
 } from "lucide-react";
+import apiClient from "../../../app-services/apiClient";
 
 function BookDemoForm() {
-  const [formData, setFormData] = useState({
+  const initialFormData = {
     schoolName: "",
     contactPerson: "",
     phone: "",
@@ -15,8 +16,9 @@ function BookDemoForm() {
     role: "",
     studentStrength: "",
     preference: "Online",
-  });
+  };
 
+  const [formData, setFormData] = useState(initialFormData);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({
     type: "",
@@ -26,6 +28,17 @@ function BookDemoForm() {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
+    if (name === "phone") {
+      const digitsOnly = value.replace(/\D/g, "").slice(0, 10);
+
+      setFormData((prev) => ({
+        ...prev,
+        phone: digitsOnly,
+      }));
+
+      return;
+    }
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -34,12 +47,13 @@ function BookDemoForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     setMessage({ type: "", text: "" });
 
-    if (!/^[+\d\s().-]{7,20}$/.test(formData.phone.trim())) {
+    if (!/^[6-9]\d{9}$/.test(formData.phone)) {
       setMessage({
         type: "error",
-        text: "Please enter a valid mobile number.",
+        text: "Please enter a valid 10-digit Indian mobile number.",
       });
       return;
     }
@@ -47,17 +61,42 @@ function BookDemoForm() {
     setLoading(true);
 
     try {
-      // Replace this temporary logic with your backend API.
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      const payload = {
+        schoolName: formData.schoolName.trim(),
+        contactPerson: formData.contactPerson.trim(),
+        phone: formData.phone,
+        email: formData.email.trim(),
+        role: formData.role,
+        studentStrength: formData.studentStrength,
+        preference: formData.preference,
+      };
 
-      setMessage({
-        type: "success",
-        text: "Demo request form tested successfully. Backend connection is pending.",
-      });
-    } catch {
+      const response = await apiClient.post(
+        "/main-website/demo",
+        payload
+      );
+
+      if (response.data?.success) {
+        setMessage({
+          type: "success",
+          text:
+            response.data.message ||
+            "Your demo request has been submitted successfully.",
+        });
+
+        setFormData(initialFormData);
+      } else {
+        throw new Error(
+          response.data?.message || "Unable to submit demo request."
+        );
+      }
+    } catch (error) {
       setMessage({
         type: "error",
-        text: "Something went wrong. Please try again.",
+        text:
+          error.response?.data?.message ||
+          error.message ||
+          "Something went wrong. Please try again.",
       });
     } finally {
       setLoading(false);
@@ -72,7 +111,6 @@ function BookDemoForm() {
 
   return (
     <div className="box-border w-full min-w-0 px-5 py-6 sm:px-8 sm:py-8 lg:px-9">
-      {/* Form Header */}
       <div className="mb-6">
         <span className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-bold uppercase tracking-widest text-blue-600">
           Free Consultation
@@ -99,9 +137,7 @@ function BookDemoForm() {
         </div>
       </div>
 
-      {/* Demo Request Form */}
       <form onSubmit={handleSubmit} className="min-w-0 space-y-4">
-        {/* School Name */}
         <div className="min-w-0">
           <label htmlFor="schoolName" className={labelClass}>
             School Name <span className="text-red-500">*</span>
@@ -121,7 +157,6 @@ function BookDemoForm() {
           />
         </div>
 
-        {/* Contact Person */}
         <div className="min-w-0">
           <label htmlFor="contactPerson" className={labelClass}>
             Contact Person <span className="text-red-500">*</span>
@@ -141,7 +176,6 @@ function BookDemoForm() {
           />
         </div>
 
-        {/* Phone and Email */}
         <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="min-w-0">
             <label htmlFor="phone" className={labelClass}>
@@ -152,19 +186,25 @@ function BookDemoForm() {
               id="phone"
               name="phone"
               type="tel"
-              placeholder="Mobile number"
+              inputMode="numeric"
+              pattern="[6-9][0-9]{9}"
+              placeholder="Enter 10-digit mobile number"
               className={inputClass}
               value={formData.phone}
               onChange={handleChange}
               autoComplete="tel"
-              maxLength={20}
+              maxLength={10}
               required
             />
+
+            <p className="mt-1 text-xs text-slate-400">
+              Enter 10-digit mobile number
+            </p>
           </div>
 
           <div className="min-w-0">
             <label htmlFor="email" className={labelClass}>
-              Email Address
+              Email Address <span className="text-red-500">*</span>
             </label>
 
             <input
@@ -177,11 +217,11 @@ function BookDemoForm() {
               onChange={handleChange}
               autoComplete="email"
               maxLength={254}
+              required
             />
           </div>
         </div>
 
-        {/* Designation and Student Strength */}
         <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="min-w-0">
             <label htmlFor="role" className={labelClass}>
@@ -206,7 +246,7 @@ function BookDemoForm() {
 
           <div className="min-w-0">
             <label htmlFor="studentStrength" className={labelClass}>
-              Student Strength
+              Student Strength <span className="text-red-500">*</span>
             </label>
 
             <select
@@ -215,6 +255,7 @@ function BookDemoForm() {
               className={inputClass}
               value={formData.studentStrength}
               onChange={handleChange}
+              required
             >
               <option value="">Select strength</option>
               <option value="Below 200">Below 200</option>
@@ -226,7 +267,6 @@ function BookDemoForm() {
           </div>
         </div>
 
-        {/* Demo Preference */}
         <fieldset className="min-w-0">
           <legend className={labelClass}>Demo Preference</legend>
 
@@ -255,7 +295,6 @@ function BookDemoForm() {
           </div>
         </fieldset>
 
-        {/* Success / Error Message */}
         {message.text && (
           <div
             role="status"
@@ -270,7 +309,6 @@ function BookDemoForm() {
           </div>
         )}
 
-        {/* Submit Button */}
         <button
           type="submit"
           disabled={loading}

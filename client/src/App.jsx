@@ -45,6 +45,30 @@ function PublicLayout({ children }) {
   );
 }
 
+// Temporary Schools Management Page
+function SchoolsManagementPlaceholder() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
+      <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+        <h1 className="text-2xl font-bold text-slate-800">
+          Schools Management
+        </h1>
+
+        <p className="mt-3 text-sm leading-6 text-slate-500">
+          Schools Management page has not been created yet.
+        </p>
+
+        <Link
+          to="/super-admin/dashboard"
+          className="mt-6 inline-flex rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+        >
+          Back to Dashboard
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 // 404 Page
 function NotFound() {
   return (
@@ -72,7 +96,9 @@ function NotFound() {
 // Main App
 function App() {
   if (!GOOGLE_CLIENT_ID) {
-    console.warn("VITE_GOOGLE_CLIENT_ID is missing from your environment variables.");
+    console.warn(
+      "VITE_GOOGLE_CLIENT_ID is missing from your environment variables."
+    );
   }
 
   return (
@@ -80,36 +106,114 @@ function App() {
       <AuthProvider>
         <BrowserRouter>
           <Routes>
+            {/* ================= PUBLIC WEBSITE ROUTES ================= */}
 
-            {/* Public Website Routes */}
-            <Route path="/" element={<PublicLayout><Home /></PublicLayout>} />
-            <Route path="/features" element={<PublicLayout><Features /></PublicLayout>} />
-            <Route path="/modules" element={<PublicLayout><Modules /></PublicLayout>} />
-            <Route path="/pricing" element={<PublicLayout><Pricing /></PublicLayout>} />
-            <Route path="/about" element={<PublicLayout><About /></PublicLayout>} />
-            <Route path="/contact" element={<PublicLayout><Contact /></PublicLayout>} />
-            <Route path="/book-demo" element={<PublicLayout><BookDemoForm /></PublicLayout>} />
+            <Route
+              path="/"
+              element={
+                <PublicLayout>
+                  <Home />
+                </PublicLayout>
+              }
+            />
 
-            {/* Authentication Routes */}
+            <Route
+              path="/features"
+              element={
+                <PublicLayout>
+                  <Features />
+                </PublicLayout>
+              }
+            />
+
+            <Route
+              path="/modules"
+              element={
+                <PublicLayout>
+                  <Modules />
+                </PublicLayout>
+              }
+            />
+
+            <Route
+              path="/pricing"
+              element={
+                <PublicLayout>
+                  <Pricing />
+                </PublicLayout>
+              }
+            />
+
+            <Route
+              path="/about"
+              element={
+                <PublicLayout>
+                  <About />
+                </PublicLayout>
+              }
+            />
+
+            <Route
+              path="/contact"
+              element={
+                <PublicLayout>
+                  <Contact />
+                </PublicLayout>
+              }
+            />
+
+            <Route
+              path="/book-demo"
+              element={
+                <PublicLayout>
+                  <BookDemoForm />
+                </PublicLayout>
+              }
+            />
+
+            {/* ================= AUTHENTICATION ROUTES ================= */}
+
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
 
-            {/* Super Admin Login */}
-            <Route path="/super-admin/login" element={<SuperAdminLogin />} />
+            {/* ================= SUPER ADMIN LOGIN ================= */}
 
-            {/* Protected Super Admin Routes */}
+            <Route
+              path="/super-admin/login"
+              element={<SuperAdminLogin />}
+            />
+
+            {/* ================= PROTECTED SUPER ADMIN ROUTES ================= */}
+
             <Route element={<ProtectedRoute />}>
               <Route element={<RoleRoute allowedRoles={["superAdmin"]} />}>
-                <Route path="/super-admin/dashboard" element={<SuperAdminDashboard />} />
-                <Route path="/super-admin/website-cms" element={<WebsiteHomeEditor />} />
+
+                {/* Dashboard */}
+                <Route
+                  path="/super-admin/dashboard"
+                  element={<SuperAdminDashboard />}
+                />
+
+                {/* Schools Management */}
+                <Route
+                  path="/super-admin/schools"
+                  element={<SchoolsManagementPlaceholder />}
+                />
+
+                {/* Website CMS */}
+                <Route
+                  path="/super-admin/website-cms"
+                  element={<WebsiteHomeEditor />}
+                />
+
               </Route>
             </Route>
 
-            {/* 404 Fallback Route */}
-            <Route path="*" element={<NotFound />} />
+            {/* ================= 404 FALLBACK ================= */}
 
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>

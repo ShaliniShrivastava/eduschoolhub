@@ -2,7 +2,8 @@
 import axios from "axios";
 
 // API configuration
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 const apiClient = axios.create({
   baseURL: API_URL,
@@ -12,8 +13,6 @@ const apiClient = axios.create({
   },
 });
 
-// Separate instance prevents refresh requests from triggering
-// the same response interceptor recursively.
 const refreshClient = axios.create({
   baseURL: API_URL,
   withCredentials: true,

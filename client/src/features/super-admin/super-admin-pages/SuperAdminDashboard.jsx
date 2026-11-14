@@ -1,1040 +1,895 @@
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard,
-  Building2,
-  CreditCard,
-  Globe,
-  Wallet,
-  Mail,
-  Headphones,
-  BarChart3,
-  Bell,
-  Settings,
-  Search,
-  Menu,
-  X,
-  ChevronDown,
-  ChevronRight,
-  Plus,
-  CalendarDays,
-  CircleHelp,
-  UserRound,
-  TrendingUp,
-  TrendingDown,
-  Clock3,
-  Users,
-  GraduationCap,
-  CheckCircle2,
-  ArrowRight,
-  Crown,
-  PanelLeftClose,
   Activity,
+  ArrowDown,
+  ArrowUp,
+  Building2,
+  CalendarDays,
+  Clock3,
+  CreditCard,
+  IndianRupee,
+  MessageSquare,
+  Plus,
+  RefreshCw,
+  School,
+  Ticket,
+  Users,
+  Wallet,
+  Headset,
+  CircleHelp,
+  AlertCircle,
 } from "lucide-react";
 
-const initialStats = [
-  {
-    title: "Total Schools",
-    value: "125",
-    change: "+12%",
-    positive: true,
-    icon: Building2,
-    color: "blue",
-    points: "0,24 12,18 24,21 36,12 48,16 60,6 72,10 84,2",
-  },
-  {
-    title: "Active Schools",
-    value: "108",
-    change: "+8%",
-    positive: true,
-    icon: Users,
-    color: "green",
-    points: "0,24 12,22 24,16 36,20 48,11 60,13 72,4 84,2",
-  },
-  {
-    title: "Expiring Soon",
-    value: "7",
-    change: "-30%",
-    positive: false,
-    icon: Clock3,
-    color: "orange",
-    points: "0,23 12,17 24,22 36,12 48,18 60,8 72,12 84,2",
-  },
-  {
-    title: "Total Students",
-    value: "24,580",
-    change: "+14%",
-    positive: true,
-    icon: GraduationCap,
-    color: "purple",
-    points: "0,24 12,20 24,22 36,14 48,16 60,8 72,9 84,2",
-  },
-  {
-    title: "Total Staff",
-    value: "1,850",
-    change: "+6%",
-    positive: true,
-    icon: UserRound,
-    color: "pink",
-    points: "0,22 12,18 24,20 36,10 48,16 60,7 72,12 84,2",
-  },
-  {
-    title: "Revenue",
-    value: "₹4,85,000",
-    change: "+18%",
-    positive: true,
-    icon: Wallet,
-    color: "green",
-    points: "0,24 12,18 24,20 36,12 48,15 60,8 72,9 84,2",
-  },
-];
+import apiClient from "../../../app-services/apiClient";
+import { useAuth } from "../../../app-context/AuthContext";
 
-const renewals = [
-  { school: "XYZ School", date: "12 Oct 2026", days: 5, color: "red" },
-  { school: "ABC School", date: "15 Oct 2026", days: 8, color: "orange" },
-  { school: "DPS School", date: "18 Oct 2026", days: 11, color: "blue" },
-];
+/* ==================== HELPERS ==================== */
 
-const tickets = [
-  {
-    id: "#102",
-    issue: "Payment issue",
-    time: "Today, 11:00 AM",
-    status: "Open",
-    color: "red",
-  },
-  {
-    id: "#201",
-    issue: "Domain issue",
-    time: "Yesterday, 4:15 PM",
-    status: "Pending",
-    color: "orange",
-  },
-  {
-    id: "#099",
-    issue: "Login issue",
-    time: "10 Oct 2026",
-    status: "Open",
-    color: "red",
-  },
-];
-
-const payments = [
-  {
-    school: "ABC School",
-    amount: 25000,
-    time: "Today, 11:20 AM",
-    status: "Completed",
-    color: "blue",
-  },
-  {
-    school: "XYZ School",
-    amount: 15000,
-    time: "Yesterday, 3:45 PM",
-    status: "Completed",
-    color: "purple",
-  },
-  {
-    school: "DPS School",
-    amount: 35000,
-    time: "12 Oct 2026",
-    status: "Completed",
-    color: "green",
-  },
-];
-
-const chartOptions = {
-  "This Year": {
-    labels: ["Apr", "May", "Jun", "Jul", "Aug", "Sep"],
-    values: [18, 31, 39, 37, 49, 72],
-  },
-  "Last 6 Months": {
-    labels: ["May", "Jun", "Jul", "Aug", "Sep", "Oct"],
-    values: [25, 35, 32, 48, 57, 78],
-  },
-  "This Month": {
-    labels: ["Week 1", "Week 2", "Week 3", "Week 4"],
-    values: [22, 43, 37, 75],
-  },
+const numberFormat = (value) => {
+  if (value === null || value === undefined || value === "") return "—";
+  return Number(value).toLocaleString("en-IN");
 };
 
-const menuItems = [
-  { label: "Dashboard", icon: LayoutDashboard, path: "/super-admin/dashboard" },
-  { label: "Schools", icon: Building2, path: "/super-admin/schools", expandable: true },
-  { label: "Subscriptions", icon: CreditCard, path: "/super-admin/subscriptions" },
-  { label: "Domains", icon: Globe, path: "/super-admin/domains" },
-  { label: "Revenue", icon: Wallet, path: "/super-admin/revenue" },
-  { label: "Enquiries", icon: Mail, path: "/super-admin/enquiries" },
-  { label: "Support", icon: Headphones, path: "/super-admin/support" },
-  { label: "Analytics", icon: BarChart3, path: "/super-admin/analytics" },
-  { label: "Notifications", icon: Bell, path: "/super-admin/notifications", notification: true },
-  { label: "Website/CMS", icon: Globe, path: "/super-admin/website-cms" },
-  { label: "Settings", icon: Settings, path: "/super-admin/settings" },
-];
+const currencyFormat = (value) => {
+  if (value === null || value === undefined || value === "") return "—";
 
-const currency = (amount) =>
-  new Intl.NumberFormat("en-IN", {
+  return Number(value).toLocaleString("en-IN", {
     style: "currency",
     currency: "INR",
     maximumFractionDigits: 0,
-  }).format(amount);
+  });
+};
 
-function matchesSearch(query, ...values) {
-  if (!query.trim()) return true;
-  return values.join(" ").toLowerCase().includes(query.trim().toLowerCase());
-}
+const dateFormat = (value) => {
+  if (!value) return "Date unavailable";
 
-function Sparkline({ points, color }) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) return "Date unavailable";
+
+  return date.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+};
+
+/* ==================== REUSABLE COMPONENTS ==================== */
+
+function Panel({ children, className = "" }) {
   return (
-    <svg viewBox="0 0 84 28" className="h-7 w-[76px] shrink-0" aria-hidden="true">
-      <polyline
-        points={points}
-        fill="none"
-        stroke={color}
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function StatCard({ stat }) {
-  const Icon = stat.icon;
-
-  const themes = {
-    blue: {
-      bg: "bg-blue-50",
-      icon: "bg-blue-100 text-blue-600",
-      chart: "#2878ff",
-      change: "text-emerald-500",
-    },
-    green: {
-      bg: "bg-emerald-50",
-      icon: "bg-emerald-100 text-emerald-600",
-      chart: "#10c99a",
-      change: "text-emerald-500",
-    },
-    orange: {
-      bg: "bg-orange-50",
-      icon: "bg-orange-100 text-orange-600",
-      chart: "#ff9c43",
-      change: "text-rose-500",
-    },
-    purple: {
-      bg: "bg-violet-50",
-      icon: "bg-violet-100 text-violet-600",
-      chart: "#8b43ff",
-      change: "text-emerald-500",
-    },
-    pink: {
-      bg: "bg-pink-50",
-      icon: "bg-pink-100 text-pink-600",
-      chart: "#fb3985",
-      change: "text-emerald-500",
-    },
-  };
-
-  const theme = themes[stat.color];
-
-  return (
-    <div className="min-w-0 rounded-xl border border-white bg-white p-3.5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:p-4">
-      <div className="flex items-center gap-2.5">
-        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${theme.icon}`}>
-          <Icon size={20} strokeWidth={2.2} />
-        </div>
-        <p className="min-w-0 text-[11px] font-medium leading-4 text-slate-500">
-          {stat.title}
-        </p>
-      </div>
-
-      <p className="mt-3 break-words text-[22px] font-bold leading-tight tracking-tight text-slate-900 sm:text-[25px]">
-        {stat.value}
-      </p>
-
-      <div className="mt-2 flex items-center justify-between gap-1">
-        <span className={`flex items-center gap-1 text-[10px] font-bold ${theme.change}`}>
-          {stat.positive ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-          {stat.change}
-        </span>
-        <Sparkline points={stat.points} color={theme.chart} />
-      </div>
-    </div>
-  );
-}
-
-function Panel({ title, icon: Icon, action, onAction, children, className = "" }) {
-  return (
-    <section className={`min-w-0 overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm ${className}`}>
-      <div className="flex min-h-[60px] items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 sm:px-5">
-        <div className="flex min-w-0 items-center gap-3">
-          {Icon && (
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-              <Icon size={20} />
-            </span>
-          )}
-          <div className="min-w-0">
-            <h2 className="truncate text-sm font-bold text-slate-900">{title}</h2>
-          </div>
-        </div>
-
-        {action && (
-          <button
-            type="button"
-            onClick={onAction}
-            className="inline-flex shrink-0 items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-800"
-          >
-            {action}
-            <ArrowRight size={14} />
-          </button>
-        )}
-      </div>
-
+    <section
+      className={`min-w-0 rounded-xl border border-[#E5ECF7] bg-white shadow-[0_2px_12px_rgba(37,83,145,0.04)] transition-all duration-300 hover:border-[#D5E3F7] hover:shadow-[0_8px_24px_rgba(37,83,145,0.07)] ${className}`}
+    >
       {children}
     </section>
   );
 }
 
-function RevenueChart({ selectedPeriod }) {
-  const chart = chartOptions[selectedPeriod];
-  const maxValue = Math.max(...chart.values);
-  const width = 600;
-  const height = 160;
-  const left = 28;
-  const right = 12;
-  const top = 15;
-  const bottom = 25;
-
-  const coordinates = chart.values.map((value, index) => ({
-    x: left + index * ((width - left - right) / (chart.values.length - 1 || 1)),
-    y: top + (1 - value / (maxValue * 1.15)) * (height - top - bottom),
-    value,
-  }));
-
-  const linePath = coordinates
-    .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`)
-    .join(" ");
-
-  const areaPath = `${linePath} L ${coordinates[coordinates.length - 1].x} ${height - bottom} L ${coordinates[0].x} ${height - bottom} Z`;
-
+function PanelHeader({ icon: Icon, title, action, onAction }) {
   return (
-    <div className="px-3 pb-4 pt-3 sm:px-5">
-      <div className="flex justify-between text-[10px] text-slate-400">
-        <span>Revenue trend</span>
-        <span className="font-semibold text-emerald-600">↑ Platform growth</span>
+    <div className="flex items-center justify-between gap-3 border-b border-[#EEF2F8] px-4 py-3.5">
+      <div className="flex min-w-0 items-center gap-2.5">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F0EAFE] text-[#8749F5]">
+          <Icon size={18} strokeWidth={2.2} />
+        </span>
+
+        <h3 className="truncate text-[14px] font-bold tracking-tight text-[#17264A] sm:text-[15px]">
+          {title}
+        </h3>
       </div>
 
-      <div className="mt-3 w-full">
-        <svg
-          viewBox={`0 0 ${width} ${height}`}
-          className="h-auto w-full overflow-visible"
-          role="img"
-          aria-label={`Revenue overview for ${selectedPeriod}`}
+      {action && (
+        <button
+          type="button"
+          onClick={onAction}
+          className="shrink-0 rounded-md px-2 py-1.5 text-[11px] font-bold text-[#2874F5] transition-all duration-200 hover:bg-[#EEF4FF] hover:text-[#1457C7] active:scale-95"
         >
-          {[0, 1, 2, 3, 4].map((line) => {
-            const y = top + line * ((height - top - bottom) / 4);
-            return (
-              <g key={line}>
-                <line
-                  x1={left}
-                  y1={y}
-                  x2={width - right}
-                  y2={y}
-                  stroke="#edf2f8"
-                  strokeDasharray="3 4"
-                />
-                <text
-                  x="0"
-                  y={y + 4}
-                  fill="#8293ad"
-                  fontSize="10"
-                >
-                  {["₹8L", "₹6L", "₹4L", "₹2L", "0"][line]}
-                </text>
-              </g>
-            );
-          })}
+          {action} <span className="ml-1">→</span>
+        </button>
+      )}
+    </div>
+  );
+}
 
-          {coordinates.map((point) => (
-            <line
-              key={`grid-${point.x}`}
-              x1={point.x}
-              y1={top}
-              x2={point.x}
-              y2={height - bottom}
-              stroke="#f4f6fa"
-            />
-          ))}
+function EmptyState({ message }) {
+  return (
+    <div className="flex min-h-[145px] flex-col items-center justify-center px-4 py-6 text-center">
+      <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-[#F1F5FB] text-[#94A3B8]">
+        <CircleHelp size={19} />
+      </span>
 
-          <defs>
-            <linearGradient id="revenueFillEduSchoolHub" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#2878ff" stopOpacity="0.22" />
-              <stop offset="100%" stopColor="#2878ff" stopOpacity="0.01" />
-            </linearGradient>
-          </defs>
+      <p className="text-[11px] font-medium text-[#8794A9]">{message}</p>
+    </div>
+  );
+}
 
-          <path d={areaPath} fill="url(#revenueFillEduSchoolHub)" />
+function LoadingValue() {
+  return (
+    <span className="inline-block h-7 w-20 animate-pulse rounded-md bg-[#EDF2F8]" />
+  );
+}
 
-          <path
-            d={linePath}
-            fill="none"
-            stroke="#2878ff"
-            strokeWidth="3"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
+/* ==================== STATISTICS CARD ==================== */
 
-          {coordinates.map((point, index) => (
-            <g key={chart.labels[index]}>
-              <circle
-                cx={point.x}
-                cy={point.y}
-                r="4"
-                fill="#2878ff"
-                stroke="white"
-                strokeWidth="2"
-              />
-              <text
-                x={point.x}
-                y={height - 6}
-                textAnchor="middle"
-                fill="#7d90ab"
-                fontSize="10"
-              >
-                {chart.labels[index]}
-              </text>
-            </g>
-          ))}
-        </svg>
+function StatCard({
+  title,
+  value,
+  icon: Icon,
+  color,
+  background,
+  trend,
+  loading,
+  index = 0,
+}) {
+  const hasTrend = trend !== null && trend !== undefined;
+
+  return (
+    <div
+      style={{ animationDelay: `${index * 80}ms` }}
+      className="group min-w-0 rounded-xl border border-[#E5ECF7] bg-white p-3.5 shadow-[0_2px_10px_rgba(37,83,145,0.035)] transition-all duration-300 ease-out hover:-translate-y-1 hover:border-[#CFE0FA] hover:shadow-[0_12px_26px_rgba(37,99,235,0.10)] sm:p-4"
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110"
+          style={{ color, backgroundColor: background }}
+        >
+          <Icon size={19} strokeWidth={2.2} />
+        </span>
+
+        {hasTrend && (
+          <span
+            className={`flex items-center gap-0.5 rounded-full px-2 py-1 text-[10px] font-bold ${
+              Number(trend) >= 0
+                ? "bg-[#E8FBF3] text-[#12A879]"
+                : "bg-[#FFF0F2] text-[#E95067]"
+            }`}
+          >
+            {Number(trend) >= 0 ? (
+              <ArrowUp size={12} />
+            ) : (
+              <ArrowDown size={12} />
+            )}
+            {Math.abs(Number(trend))}%
+          </span>
+        )}
+      </div>
+
+      <p className="mt-3 text-[11px] font-medium text-[#72809B]">
+        {title}
+      </p>
+
+      <p className="mt-0.5 truncate text-[23px] font-extrabold tracking-tight text-[#17264A] sm:text-[25px]">
+        {loading ? <LoadingValue /> : value}
+      </p>
+
+      <div className="mt-2 h-[3px] overflow-hidden rounded-full bg-[#F0F3F8]">
+        <div
+          className="h-full rounded-full transition-all duration-700"
+          style={{
+            width: hasTrend
+              ? `${Math.min(Math.abs(Number(trend)), 100)}%`
+              : "0%",
+            backgroundColor: color,
+          }}
+        />
       </div>
     </div>
   );
 }
 
-function SchoolStatusChart() {
-  const status = [
-    { label: "Active Schools", value: 108, percent: 86, color: "#20cfa4" },
-    { label: "Expired Schools", value: 7, percent: 6, color: "#8b43ff" },
-    { label: "Expiring Soon", value: 7, percent: 6, color: "#ff80aa" },
+/* ==================== REVENUE CHART ==================== */
+
+function RevenueChart({ revenueTrend, selectedPeriod, onPeriodChange }) {
+  const chart = useMemo(() => {
+    if (!revenueTrend) return null;
+
+    const period =
+      revenueTrend[selectedPeriod] ||
+      revenueTrend[selectedPeriod.toLowerCase()] ||
+      revenueTrend;
+
+    const labels = period?.labels;
+    const values = period?.values;
+
+    if (
+      !Array.isArray(labels) ||
+      !Array.isArray(values) ||
+      values.length === 0 ||
+      labels.length !== values.length
+    ) {
+      return null;
+    }
+
+    const numericValues = values.map(Number);
+
+    if (numericValues.some((value) => !Number.isFinite(value))) {
+      return null;
+    }
+
+    const width = 620;
+    const height = 195;
+    const left = 42;
+    const right = 14;
+    const top = 16;
+    const bottom = 34;
+
+    const max = Math.max(...numericValues, 1);
+    const min = Math.min(...numericValues, 0);
+    const range = max - min || 1;
+
+    const points = numericValues.map((value, index) => ({
+      x:
+        left +
+        (index / Math.max(numericValues.length - 1, 1)) *
+          (width - left - right),
+      y: top + ((max - value) / range) * (height - top - bottom),
+      value,
+    }));
+
+    const linePath = points
+      .map(
+        (point, index) =>
+          `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`
+      )
+      .join(" ");
+
+    const first = points[0];
+    const last = points[points.length - 1];
+
+    return {
+      points,
+      labels,
+      linePath,
+      areaPath: `${linePath} L ${last.x} ${height - bottom} L ${first.x} ${height - bottom} Z`,
+      width,
+      height,
+    };
+  }, [revenueTrend, selectedPeriod]);
+
+  return (
+    <Panel className="h-full">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 pt-4">
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#EAF2FF] text-[#2874F5]">
+            <Activity size={19} />
+          </span>
+
+          <div>
+            <h3 className="text-[15px] font-bold tracking-tight text-[#17264A] sm:text-[16px]">
+              Revenue Overview
+            </h3>
+
+            <p className="mt-0.5 text-[10px] text-[#8290A8] sm:text-[11px]">
+              Total revenue from all schools, subscriptions and add-ons
+            </p>
+          </div>
+        </div>
+
+        <select
+          value={selectedPeriod}
+          onChange={(event) => onPeriodChange(event.target.value)}
+          className="cursor-pointer rounded-lg border border-[#E4EBF6] bg-white px-3 py-2 text-[11px] font-semibold text-[#50617E] outline-none transition focus:border-[#3478F6] focus:ring-2 focus:ring-[#3478F6]/10"
+        >
+          <option value="This Year">This Year</option>
+          <option value="Last 6 Months">Last 6 Months</option>
+          <option value="This Month">This Month</option>
+        </select>
+      </div>
+
+      <div className="px-3 pb-3 pt-3">
+        {!chart ? (
+          <EmptyState message="Revenue chart data is not available yet." />
+        ) : (
+          <div className="w-full overflow-hidden">
+            <svg
+              viewBox={`0 0 ${chart.width} ${chart.height}`}
+              className="h-[190px] w-full"
+              preserveAspectRatio="none"
+              role="img"
+              aria-label="Revenue trend chart"
+            >
+              <defs>
+                <linearGradient
+                  id="dashboardRevenueGradient"
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="1"
+                >
+                  <stop offset="0%" stopColor="#3478F6" stopOpacity="0.22" />
+                  <stop offset="100%" stopColor="#3478F6" stopOpacity="0.01" />
+                </linearGradient>
+              </defs>
+
+              {[0, 1, 2, 3].map((line) => (
+                <line
+                  key={line}
+                  x1="42"
+                  y1={16 + line * 48}
+                  x2="606"
+                  y2={16 + line * 48}
+                  stroke="#EAF0F8"
+                  strokeDasharray="4 4"
+                />
+              ))}
+
+              <path
+                d={chart.areaPath}
+                fill="url(#dashboardRevenueGradient)"
+              />
+
+              <path
+                d={chart.linePath}
+                fill="none"
+                stroke="#2874F5"
+                strokeWidth="2.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="transition-all duration-700"
+              />
+
+              {chart.points.map((point, index) => (
+                <circle
+                  key={index}
+                  cx={point.x}
+                  cy={point.y}
+                  r="3.5"
+                  fill="white"
+                  stroke="#2874F5"
+                  strokeWidth="2"
+                  className="transition-all duration-300 hover:r-5"
+                />
+              ))}
+
+              {chart.labels.map((label, index) => (
+                <text
+                  key={`${label}-${index}`}
+                  x={chart.points[index].x}
+                  y="184"
+                  fill="#8290A8"
+                  fontSize="10"
+                  textAnchor="middle"
+                >
+                  {String(label)}
+                </text>
+              ))}
+            </svg>
+
+            <div className="flex justify-between px-2 pt-1">
+              <span className="text-[10px] text-[#98A4B7]">
+                {chart.points.length} data points
+              </span>
+
+              <span className="text-[12px] font-bold text-[#2874F5]">
+                {currencyFormat(chart.points[chart.points.length - 1]?.value)}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+    </Panel>
+  );
+}
+
+/* ==================== SCHOOL STATUS ==================== */
+
+function SchoolStatusChart({ statistics }) {
+  const total = Number(statistics?.totalSchools || 0);
+  const active = Number(statistics?.activeSchools || 0);
+  const expired = Number(statistics?.expiredSchools || 0);
+  const expiring = Number(statistics?.expiringSoon || 0);
+
+  const hasData = total > 0;
+
+  const activePercent = hasData ? (active / total) * 100 : 0;
+  const expiredPercent = hasData ? (expired / total) * 100 : 0;
+  const expiringPercent = hasData ? (expiring / total) * 100 : 0;
+
+  const expiredEnd = activePercent + expiredPercent;
+  const expiringEnd = expiredEnd + expiringPercent;
+
+  const rows = [
+    { label: "Active Schools", value: active, color: "#24CDA0" },
+    { label: "Expired Schools", value: expired, color: "#8B65E8" },
+    { label: "Expiring Soon", value: expiring, color: "#F58BAC" },
   ];
 
   return (
-    <div className="grid grid-cols-1 items-center gap-5 px-5 py-5 sm:grid-cols-2">
-      <div className="flex justify-center">
+    <Panel className="h-full">
+      <div className="px-4 pt-4">
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#EAF2FF] text-[#2874F5]">
+            <Activity size={19} />
+          </span>
+
+          <div>
+            <h3 className="text-[15px] font-bold tracking-tight text-[#17264A] sm:text-[16px]">
+              School Status
+            </h3>
+
+            <p className="mt-0.5 text-[10px] text-[#8290A8] sm:text-[11px]">
+              Distribution of schools by current status
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex min-h-[225px] flex-col items-center justify-center gap-6 px-4 py-5 sm:flex-row">
         <div
-          className="relative flex h-[170px] w-[170px] items-center justify-center rounded-full"
+          className="relative flex h-[150px] w-[150px] shrink-0 items-center justify-center rounded-full transition-transform duration-500 hover:scale-105"
           style={{
-            background: "conic-gradient(#20cfa4 0% 86%, #8b43ff 86% 93%, #ff80aa 93% 100%)",
+            background: hasData
+              ? `conic-gradient(
+                  #24CDA0 0% ${activePercent}%,
+                  #8B65E8 ${activePercent}% ${expiredEnd}%,
+                  #F58BAC ${expiredEnd}% ${Math.min(expiringEnd, 100)}%,
+                  #EAF0F8 ${Math.min(expiringEnd, 100)}% 100%
+                )`
+              : "#EAF0F8",
           }}
-          role="img"
-          aria-label="School status: 86 percent active, 6 percent expired, 6 percent expiring"
         >
-          <div className="flex h-[112px] w-[112px] flex-col items-center justify-center rounded-full bg-white">
-            <span className="text-[26px] font-bold text-slate-900">125</span>
-            <span className="text-xs text-slate-500">Schools</span>
+          <div className="flex h-[103px] w-[103px] flex-col items-center justify-center rounded-full bg-white">
+            <span className="text-[25px] font-extrabold text-[#17264A]">
+              {hasData ? numberFormat(total) : "—"}
+            </span>
+
+            <span className="text-[11px] text-[#8290A8]">Schools</span>
           </div>
         </div>
-      </div>
 
-      <div className="space-y-4">
-        {status.map((item) => (
-          <div key={item.label} className="flex items-center gap-2">
-            <span
-              className="h-3 w-3 shrink-0 rounded-full"
-              style={{ backgroundColor: item.color }}
-            />
-            <span className="min-w-0 flex-1 text-[11px] text-slate-500">
-              {item.label}
-            </span>
-            <span className="text-xs font-bold text-slate-800">{item.value}</span>
-            <span className="w-9 text-right text-[11px] text-slate-500">
-              {item.percent}%
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function SectionIcon({ icon: Icon, color = "blue" }) {
-  const styles = {
-    blue: "bg-blue-50 text-blue-600",
-    purple: "bg-violet-50 text-violet-600",
-    green: "bg-emerald-50 text-emerald-600",
-  };
-
-  return (
-    <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${styles[color]}`}>
-      <Icon size={20} />
-    </span>
-  );
-}
-
-function StatusBadge({ status, color }) {
-  const styles = {
-    red: "bg-rose-50 text-rose-600",
-    orange: "bg-orange-50 text-orange-600",
-    green: "bg-emerald-50 text-emerald-600",
-    blue: "bg-blue-50 text-blue-600",
-    purple: "bg-violet-50 text-violet-600",
-  };
-
-  return (
-    <span className={`inline-flex whitespace-nowrap rounded-lg px-2.5 py-1.5 text-[10px] font-semibold ${styles[color] || styles.blue}`}>
-      {status}
-    </span>
-  );
-}
-
-function Sidebar({ open, onClose, navigate }) {
-  const [schoolsExpanded, setSchoolsExpanded] = useState(true);
-  const [active, setActive] = useState("Dashboard");
-
-  const goTo = (label, path) => {
-    setActive(label);
-    onClose();
-    navigate(path);
-  };
-
-  return (
-    <>
-      {open && (
-        <button
-          type="button"
-          aria-label="Close sidebar overlay"
-          onClick={onClose}
-          className="fixed inset-0 z-40 bg-slate-950/40 lg:hidden"
-        />
-      )}
-
-      <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-[250px] flex-col border-r border-slate-100 bg-white transition-transform duration-200 lg:translate-x-0 ${
-          open ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
-        <div className="flex h-[76px] shrink-0 items-center justify-between border-b border-slate-100 px-5">
-          <button
-            type="button"
-            onClick={() => goTo("Dashboard", "/super-admin/dashboard")}
-            className="flex items-center gap-2.5"
-          >
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-violet-600 text-white shadow-md shadow-blue-200">
-              <GraduationCap size={21} />
-            </span>
-            <span className="text-[19px] font-extrabold tracking-tight text-slate-900">
-              Edu<span className="text-blue-600">SchoolHub</span>
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 lg:hidden"
-            aria-label="Close sidebar"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        <div className="px-5 pb-4 pt-4">
-          <p className="text-[9px] font-bold tracking-[0.2em] text-slate-400">
-            SUPER ADMIN PANEL
-          </p>
-        </div>
-
-        <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-5">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const selected = active === item.label;
+        <div className="w-full max-w-[195px] space-y-5">
+          {rows.map((item) => {
+            const percentage = hasData
+              ? Math.round((item.value / total) * 100)
+              : null;
 
             return (
-              <div key={item.label}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (item.expandable) {
-                      setSchoolsExpanded((value) => !value);
-                      setActive(item.label);
-                    } else {
-                      goTo(item.label, item.path);
-                    }
-                  }}
-                  className={`group flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-[12px] transition ${
-                    selected
-                      ? "bg-gradient-to-r from-blue-600 to-blue-500 font-semibold text-white shadow-md shadow-blue-200"
-                      : "text-slate-600 hover:bg-blue-50 hover:text-blue-700"
-                  }`}
-                >
-                  <Icon size={17} />
-                  <span className="flex-1">{item.label}</span>
+              <div
+                key={item.label}
+                className="flex items-center justify-between gap-2"
+              >
+                <div className="flex min-w-0 items-center gap-2">
+                  <span
+                    className="h-2.5 w-2.5 shrink-0 rounded-full"
+                    style={{ backgroundColor: item.color }}
+                  />
 
-                  {item.expandable && (
-                    <ChevronDown
-                      size={14}
-                      className={`transition-transform ${schoolsExpanded ? "" : "-rotate-90"}`}
-                    />
-                  )}
+                  <span className="truncate text-[11px] text-[#72809B]">
+                    {item.label}
+                  </span>
+                </div>
 
-                  {item.notification && (
-                    <span className="h-2 w-2 rounded-full bg-pink-500" />
-                  )}
-                </button>
+                <div className="flex shrink-0 items-center gap-3">
+                  <span className="text-[11px] font-bold text-[#243454]">
+                    {hasData ? numberFormat(item.value) : "—"}
+                  </span>
 
-                {item.expandable && schoolsExpanded && (
-                  <div className="ml-8 mt-1 space-y-0.5 border-l border-blue-100 pl-3">
-                    <button
-                      type="button"
-                      onClick={() => goTo("Schools", "/super-admin/schools")}
-                      className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-[11px] text-slate-500 hover:bg-blue-50 hover:text-blue-700"
-                    >
-                      <span className="h-1 w-1 rounded-full bg-blue-400" />
-                      All Schools
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => goTo("Schools", "/super-admin/schools")}
-                      className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-[11px] text-slate-500 hover:bg-blue-50 hover:text-blue-700"
-                    >
-                      <span className="h-1 w-1 rounded-full bg-blue-400" />
-                      Add School
-                    </button>
-                  </div>
-                )}
+                  <span className="w-8 text-right text-[10px] text-[#8290A8]">
+                    {percentage === null ? "—" : `${percentage}%`}
+                  </span>
+                </div>
               </div>
             );
           })}
-        </nav>
-
-        <div className="mx-4 mb-4 rounded-2xl bg-gradient-to-br from-blue-50 via-indigo-50 to-violet-100 p-4">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-blue-600 shadow-sm">
-            <Crown size={19} />
-          </span>
-          <h3 className="mt-3 text-xs font-bold text-slate-900">Super Admin</h3>
-          <p className="mt-1 text-[10px] leading-4 text-slate-500">
-            Complete control over your EduSchoolHub platform.
-          </p>
-          <button
-            type="button"
-            onClick={() => goTo("Settings", "/super-admin/settings")}
-            className="mt-3 text-[10px] font-semibold text-blue-700 hover:underline"
-          >
-            Manage platform <ArrowRight size={12} className="ml-1 inline" />
-          </button>
         </div>
-      </aside>
-    </>
+      </div>
+    </Panel>
   );
 }
 
-export default function SuperAdminDashboard() {
-  const navigate = useNavigate();
+/* ==================== UPCOMING RENEWALS ==================== */
 
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const [selectedPeriod, setSelectedPeriod] = useState("This Year");
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
+function RenewalsPanel({ items, onViewAll }) {
+  return (
+    <Panel>
+      <PanelHeader
+        icon={CalendarDays}
+        title="Upcoming Renewals"
+        action="View All"
+        onAction={onViewAll}
+      />
 
-  const filteredRenewals = useMemo(
-    () => renewals.filter((item) => matchesSearch(search, item.school, item.date)),
-    [search]
+      {!items.length ? (
+        <EmptyState message="No upcoming renewals available." />
+      ) : (
+        <div className="divide-y divide-[#EDF2F8]">
+          {items.slice(0, 4).map((item, index) => (
+            <div
+              key={item._id || item.id || index}
+              className="flex items-center justify-between gap-2 px-3.5 py-3 transition-colors duration-200 hover:bg-[#F8FAFE]"
+            >
+              <div className="flex min-w-0 items-center gap-2.5">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#EAF2FF] text-[#2874F5]">
+                  <Building2 size={18} />
+                </span>
+
+                <div className="min-w-0">
+                  <p className="truncate text-[12px] font-bold text-[#243454]">
+                    {item.schoolName || item.school?.name || "School"}
+                  </p>
+
+                  <p className="mt-0.5 text-[10px] text-[#8996AB]">
+                    {dateFormat(item.renewalDate || item.expiryDate)}
+                  </p>
+                </div>
+              </div>
+
+              <span className="shrink-0 rounded-full bg-[#FFF0F3] px-3 py-1.5 text-[10px] font-bold text-[#F05272]">
+                {item.daysRemaining !== undefined
+                  ? `${item.daysRemaining} days`
+                  : item.status || "Upcoming"}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </Panel>
   );
+}
 
-  const filteredTickets = useMemo(
-    () => tickets.filter((item) => matchesSearch(search, item.id, item.issue, item.status)),
-    [search]
-  );
+/* ==================== SUPPORT TICKETS ==================== */
 
-  const filteredPayments = useMemo(
-    () => payments.filter((item) => matchesSearch(search, item.school, item.status, item.time)),
-    [search]
-  );
+function SupportTicketsPanel({ items, onViewAll }) {
+  const statusStyle = (status = "") => {
+    const value = status.toLowerCase();
 
-  const goTo = (path) => {
-    setSidebarOpen(false);
-    setNotificationsOpen(false);
-    setProfileOpen(false);
-    navigate(path);
+    if (value === "open") return "bg-[#FFF0F3] text-[#E95070]";
+    if (value === "pending") return "bg-[#FFF4E7] text-[#E69A36]";
+
+    if (value === "resolved" || value === "closed") {
+      return "bg-[#E7FBF3] text-[#12A879]";
+    }
+
+    return "bg-[#F0F3F8] text-[#718099]";
   };
 
   return (
-    <div className="min-h-screen bg-[#f3f7fd] font-sans text-slate-800">
-      <Sidebar
-        open={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        navigate={navigate}
+    <Panel>
+      <PanelHeader
+        icon={Headset}
+        title="Support Tickets"
+        action="View All"
+        onAction={onViewAll}
       />
 
-      <div className="min-h-screen lg:ml-[250px]">
-        {/* Top navigation */}
-        <header className="sticky top-0 z-30 flex h-[76px] items-center gap-3 border-b border-slate-100 bg-white/95 px-4 backdrop-blur-md sm:gap-5 sm:px-6 lg:px-7">
-          <button
-            type="button"
-            onClick={() => setSidebarOpen(true)}
-            aria-label="Open navigation"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 lg:hidden"
-          >
-            <Menu size={20} />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setSidebarOpen((value) => !value)}
-            aria-label="Toggle navigation"
-            className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 lg:flex"
-          >
-            <PanelLeftClose size={18} />
-          </button>
-
-          <div className="relative min-w-0 max-w-[500px] flex-1">
-            <Search
-              size={16}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-            />
-            <input
-              type="search"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search schools, payments, enquiries..."
-              aria-label="Search dashboard records"
-              className="h-[39px] w-full rounded-xl border border-slate-100 bg-[#f7f9fd] pl-10 pr-3 text-xs text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:ring-2 focus:ring-blue-50"
-            />
-          </div>
-
-          <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
-            <div className="relative">
-              <button
-                type="button"
-                aria-label="Notifications"
-                onClick={() => {
-                  setNotificationsOpen((value) => !value);
-                  setProfileOpen(false);
-                }}
-                className="relative flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-50"
-              >
-                <Bell size={19} />
-                <span className="absolute right-2 top-2 h-2 w-2 rounded-full border border-white bg-pink-500" />
-              </button>
-
-              {notificationsOpen && (
-                <div className="absolute right-0 top-12 z-50 w-[260px] rounded-xl border border-slate-100 bg-white p-4 shadow-xl">
-                  <h3 className="text-sm font-bold text-slate-800">Notifications</h3>
-                  <p className="mt-3 text-xs leading-5 text-slate-500">
-                    7 subscriptions are expiring soon. Review renewals to keep
-                    school access active.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => goTo("/super-admin/subscriptions")}
-                    className="mt-3 text-xs font-semibold text-blue-600 hover:underline"
-                  >
-                    Review subscriptions
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <button
-              type="button"
-              onClick={() => goTo("/super-admin/support")}
-              aria-label="Help and support"
-              className="hidden h-10 w-10 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-50 sm:flex"
+      {!items.length ? (
+        <EmptyState message="No support tickets available." />
+      ) : (
+        <div className="divide-y divide-[#EDF2F8]">
+          {items.slice(0, 4).map((item, index) => (
+            <div
+              key={item._id || item.id || index}
+              className="flex items-center justify-between gap-2 px-3.5 py-3.5 transition-colors duration-200 hover:bg-[#F8FAFE]"
             >
-              <CircleHelp size={19} />
-            </button>
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#F59A32]" />
 
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => {
-                  setProfileOpen((value) => !value);
-                  setNotificationsOpen(false);
-                }}
-                className="flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50/70 p-1.5 pr-2.5 hover:bg-blue-50"
-              >
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-xs font-bold text-white">
-                  A
+                <span className="shrink-0 text-[10px] font-bold text-[#718099]">
+                  #{item.ticketNumber || item.ticketId || item._id || "—"}
                 </span>
-                <span className="hidden text-left sm:block">
-                  <span className="block text-[11px] font-bold text-slate-800">Admin</span>
-                  <span className="block text-[9px] text-slate-400">Super Admin</span>
-                </span>
-                <ChevronDown size={14} className="text-slate-500" />
-              </button>
 
-              {profileOpen && (
-                <div className="absolute right-0 top-12 z-50 w-48 rounded-xl border border-slate-100 bg-white p-2 shadow-xl">
-                  <button
-                    type="button"
-                    onClick={() => goTo("/super-admin/settings")}
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-xs text-slate-600 hover:bg-slate-50"
-                  >
-                    <Settings size={15} />
-                    Account settings
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => goTo("/super-admin/support")}
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-xs text-slate-600 hover:bg-slate-50"
-                  >
-                    <CircleHelp size={15} />
-                    Help & Support
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </header>
-
-        <main className="mx-auto max-w-[1700px] px-4 pb-8 pt-6 sm:px-6 lg:px-7">
-          {/* Page heading */}
-          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-            <div>
-              <div className="flex items-center gap-2">
-                <Activity size={15} className="text-blue-600" />
-                <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-blue-600">
-                  Platform overview
-                </span>
-              </div>
-              <h1 className="mt-2 text-[27px] font-extrabold tracking-tight text-slate-900 sm:text-[31px]">
-                Dashboard
-              </h1>
-              <h2 className="mt-0.5 text-base font-bold text-slate-800">
-                Good Morning, Admin <span aria-hidden="true">👋</span>
-              </h2>
-              <p className="mt-1 text-xs text-slate-500">
-                Here&apos;s what&apos;s happening with EduSchoolHub today.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() => goTo("/super-admin/schools")}
-                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 text-xs font-bold text-white shadow-md shadow-blue-200 transition hover:bg-blue-700"
-              >
-                <Plus size={16} />
-                Add School
-              </button>
-              <button
-                type="button"
-                onClick={() => goTo("/super-admin/enquiries")}
-                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-100 bg-white px-3.5 text-xs font-semibold text-slate-600 shadow-sm transition hover:border-blue-200 hover:text-blue-600"
-              >
-                <Mail size={15} />
-                View Enquiries
-              </button>
-              <button
-                type="button"
-                onClick={() => goTo("/super-admin/subscriptions")}
-                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-100 bg-white px-3.5 text-xs font-semibold text-slate-600 shadow-sm transition hover:border-blue-200 hover:text-blue-600"
-              >
-                <CalendarDays size={15} />
-                View Renewals
-              </button>
-            </div>
-          </div>
-
-          {/* Stats */}
-          <section className="mt-6 grid grid-cols-1 gap-3 min-[440px]:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-            {initialStats.map((stat) => (
-              <StatCard key={stat.title} stat={stat} />
-            ))}
-          </section>
-
-          {/* Charts */}
-          <section className="mt-4 grid grid-cols-1 gap-4 2xl:grid-cols-[1.25fr_0.9fr]">
-            <Panel
-              title="Revenue Overview"
-              icon={BarChart3}
-              className="min-h-[310px]"
-            >
-              <div className="flex flex-wrap items-center justify-between gap-3 px-4 pt-4 sm:px-5">
-                <p className="text-[11px] text-slate-500">
-                  Total revenue from all schools (subscriptions, add-ons, etc.)
+                <p className="min-w-0 truncate text-[11px] font-medium text-[#243454]">
+                  {item.subject || item.title || "Support request"}
                 </p>
-                <label className="relative">
-                  <select
-                    value={selectedPeriod}
-                    onChange={(event) => setSelectedPeriod(event.target.value)}
-                    className="h-9 appearance-none rounded-lg border border-slate-100 bg-white pl-3 pr-8 text-[11px] font-semibold text-slate-600 outline-none focus:border-blue-300"
-                  >
-                    {Object.keys(chartOptions).map((period) => (
-                      <option key={period} value={period}>
-                        {period}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown
-                    size={13}
-                    className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500"
-                  />
-                </label>
               </div>
 
-              <RevenueChart selectedPeriod={selectedPeriod} />
-
-              <div className="mx-5 mb-4 flex items-center justify-between rounded-lg bg-blue-50/70 px-3 py-2.5">
-                <span className="text-[10px] text-slate-500">Total platform revenue</span>
-                <span className="text-sm font-extrabold text-blue-700">₹4,85,000</span>
-              </div>
-            </Panel>
-
-            <Panel
-              title="School Status"
-              icon={Activity}
-              className="min-h-[310px]"
-            >
-              <p className="px-5 pt-4 text-[11px] text-slate-500">
-                Distribution of schools by current status
-              </p>
-              <SchoolStatusChart />
-            </Panel>
-          </section>
-
-          {/* Renewals, tickets and payments */}
-          <section className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2 2xl:grid-cols-3">
-            {/* Upcoming renewals */}
-            <Panel
-              title="Upcoming Renewals"
-              icon={CalendarDays}
-              action="View All"
-              onAction={() => goTo("/super-admin/subscriptions")}
-            >
-              <div className="px-4 py-1">
-                {filteredRenewals.map((item) => (
-                  <div
-                    key={item.school}
-                    className="flex items-center gap-3 border-b border-slate-100 py-3 last:border-b-0"
-                  >
-                    <SectionIcon icon={Building2} color="blue" />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-bold text-slate-800">
-                        {item.school}
-                      </p>
-                      <p className="mt-1 text-[10px] text-slate-500">{item.date}</p>
-                    </div>
-                    <StatusBadge
-                      status={`${item.days} days`}
-                      color={item.color}
-                    />
-                  </div>
-                ))}
-                {filteredRenewals.length === 0 && (
-                  <p className="py-8 text-center text-xs text-slate-400">
-                    No matching renewals.
-                  </p>
-                )}
-              </div>
-            </Panel>
-
-            {/* Support tickets */}
-            <Panel
-              title="Support Tickets"
-              icon={Headphones}
-              action="View All"
-              onAction={() => goTo("/super-admin/support")}
-            >
-              <div className="px-4 py-1">
-                {filteredTickets.map((ticket) => (
-                  <div
-                    key={ticket.id}
-                    className="flex items-center gap-2.5 border-b border-slate-100 py-4 last:border-b-0"
-                  >
-                    <span
-                      className={`h-2.5 w-2.5 shrink-0 rounded-full ${
-                        ticket.color === "red" ? "bg-pink-500" : "bg-orange-500"
-                      }`}
-                    />
-                    <span className="text-[10px] font-bold text-slate-700">
-                      {ticket.id}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-[11px] font-semibold text-slate-800">
-                        {ticket.issue}
-                      </p>
-                      <p className="mt-1 truncate text-[10px] text-slate-400">
-                        {ticket.time}
-                      </p>
-                    </div>
-                    <StatusBadge status={ticket.status} color={ticket.color} />
-                  </div>
-                ))}
-                {filteredTickets.length === 0 && (
-                  <p className="py-8 text-center text-xs text-slate-400">
-                    No matching tickets.
-                  </p>
-                )}
-              </div>
-            </Panel>
-
-            {/* Recent payments */}
-            <Panel
-              title="Recent Payments"
-              icon={CreditCard}
-              action="View All"
-              onAction={() => goTo("/super-admin/revenue")}
-            >
-              <div className="px-4 py-1">
-                {filteredPayments.map((payment) => (
-                  <div
-                    key={payment.school}
-                    className="flex items-center gap-3 border-b border-slate-100 py-3 last:border-b-0"
-                  >
-                    <SectionIcon
-                      icon={Building2}
-                      color={payment.color === "green" ? "green" : payment.color === "purple" ? "purple" : "blue"}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-bold text-slate-800">
-                        {payment.school}
-                      </p>
-                      <p className="mt-1 text-[10px] text-slate-500">
-                        {payment.time}
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 flex-col items-end gap-1.5">
-                      <span className="text-xs font-extrabold text-slate-800">
-                        {currency(payment.amount)}
-                      </span>
-                      <StatusBadge status={payment.status} color="green" />
-                    </div>
-                  </div>
-                ))}
-                {filteredPayments.length === 0 && (
-                  <p className="py-8 text-center text-xs text-slate-400">
-                    No matching payments.
-                  </p>
-                )}
-              </div>
-            </Panel>
-          </section>
-
-          {/* Footer */}
-          <footer className="mt-7 flex flex-col justify-between gap-2 border-t border-slate-200 py-5 text-[10px] text-slate-400 sm:flex-row sm:items-center">
-            <p>© {new Date().getFullYear()} EduSchoolHub. All rights reserved.</p>
-            <div className="flex items-center gap-4">
-              <button
-                type="button"
-                onClick={() => goTo("/super-admin/support")}
-                className="inline-flex items-center gap-1.5 hover:text-blue-600"
+              <span
+                className={`shrink-0 rounded-full px-2.5 py-1.5 text-[9px] font-bold ${statusStyle(
+                  item.status
+                )}`}
               >
-                <Headphones size={13} />
-                Help & Support
-              </button>
-              <button
-                type="button"
-                onClick={() => goTo("/super-admin/settings")}
-                className="inline-flex items-center gap-1.5 hover:text-blue-600"
-              >
-                <Settings size={13} />
-                Settings
-              </button>
+                {item.status || "Unknown"}
+              </span>
             </div>
-          </footer>
-        </main>
+          ))}
+        </div>
+      )}
+    </Panel>
+  );
+}
+
+/* ==================== RECENT PAYMENTS ==================== */
+
+function RecentPaymentsPanel({ items, onViewAll }) {
+  return (
+    <Panel>
+      <PanelHeader
+        icon={CreditCard}
+        title="Recent Payments"
+        action="View All"
+        onAction={onViewAll}
+      />
+
+      {!items.length ? (
+        <EmptyState message="No recent payment records available." />
+      ) : (
+        <div className="divide-y divide-[#EDF2F8]">
+          {items.slice(0, 4).map((item, index) => {
+            const status = (item.status || "").toLowerCase();
+
+            const paid = ["completed", "paid", "success"].includes(status);
+
+            return (
+              <div
+                key={item._id || item.id || index}
+                className="flex items-center justify-between gap-2 px-3.5 py-3 transition-colors duration-200 hover:bg-[#F8FAFE]"
+              >
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#EAF2FF] text-[#2874F5]">
+                    <Building2 size={18} />
+                  </span>
+
+                  <div className="min-w-0">
+                    <p className="truncate text-[12px] font-bold text-[#243454]">
+                      {item.schoolName || item.school?.name || "Payment"}
+                    </p>
+
+                    <p className="mt-0.5 text-[10px] text-[#8996AB]">
+                      {dateFormat(item.paymentDate || item.createdAt)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="shrink-0 text-right">
+                  <p className="text-[13px] font-extrabold text-[#243454]">
+                    {currencyFormat(item.amount)}
+                  </p>
+
+                  <span
+                    className={`inline-block rounded-full px-2.5 py-1 text-[9px] font-bold ${
+                      paid
+                        ? "bg-[#E4FBF1] text-[#10A879]"
+                        : "bg-[#FFF4E7] text-[#E69A36]"
+                    }`}
+                  >
+                    {item.status || "Unknown"}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </Panel>
+  );
+}
+
+/* ==================== MAIN DASHBOARD ==================== */
+
+export default function SuperAdminDashboard() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [selectedPeriod, setSelectedPeriod] = useState("This Year");
+
+  const fetchDashboard = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const response = await apiClient.get("/superadmin/dashboard");
+
+      const payload = response.data?.data || response.data;
+
+      setDashboardData(payload || null);
+    } catch (err) {
+      console.error("Dashboard API error:", err);
+
+      setError(
+        err.response?.data?.message ||
+          "Unable to load dashboard information. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchDashboard();
+  }, [fetchDashboard]);
+
+  const statistics = dashboardData?.statistics || {};
+
+  const cards = [
+    {
+      title: "Total Schools",
+      value: numberFormat(statistics.totalSchools),
+      icon: Building2,
+      color: "#2874F5",
+      background: "#EAF2FF",
+      trend: statistics.trends?.totalSchools,
+    },
+    {
+      title: "Active Schools",
+      value: numberFormat(statistics.activeSchools),
+      icon: Users,
+      color: "#12B981",
+      background: "#E5FBF2",
+      trend: statistics.trends?.activeSchools,
+    },
+    {
+      title: "Expiring Soon",
+      value: numberFormat(statistics.expiringSoon),
+      icon: Clock3,
+      color: "#F59A32",
+      background: "#FFF3E5",
+      trend: statistics.trends?.expiringSoon,
+    },
+    {
+      title: "Total Students",
+      value: numberFormat(statistics.totalStudents),
+      icon: Users,
+      color: "#8B45ED",
+      background: "#F3EAFE",
+      trend: statistics.trends?.totalStudents,
+    },
+    {
+      title: "Total Staff",
+      value: numberFormat(statistics.totalStaff),
+      icon: Users,
+      color: "#ED4B91",
+      background: "#FDEAF2",
+      trend: statistics.trends?.totalStaff,
+    },
+    {
+      title: "Revenue",
+      value: currencyFormat(statistics.totalRevenue),
+      icon: Wallet,
+      color: "#12B981",
+      background: "#E5FBF2",
+      trend: statistics.trends?.totalRevenue,
+    },
+  ];
+
+  const renewals = dashboardData?.upcomingRenewals || [];
+  const tickets = dashboardData?.supportTickets || [];
+  const payments = dashboardData?.recentPayments || [];
+
+  const adminName = dashboardData?.user?.name || user?.name || "Admin";
+
+  return (
+    <div className="min-h-full w-full bg-[#F4F8FE] p-3 sm:p-4 lg:p-5">
+      {/* PAGE HEADING */}
+
+      <div className="mb-5 flex flex-col justify-between gap-4 xl:flex-row xl:items-center">
+        <div>
+          <h1 className="text-[29px] font-extrabold leading-tight tracking-[-1px] text-[#101F45] sm:text-[33px] lg:text-[36px]">
+            Dashboard
+          </h1>
+
+          <p className="mt-1 text-[16px] font-bold text-[#17264A] sm:text-[18px]">
+            Good Morning, {adminName} 👋
+          </p>
+
+          <p className="mt-1 text-[11px] text-[#8190A9] sm:text-[12px]">
+            Here&apos;s what&apos;s happening with EduSchoolHub today.
+          </p>
+        </div>
+
+        {/* HEADER ACTIONS */}
+
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => navigate("/super-admin/schools/add")}
+            className="inline-flex items-center gap-2 rounded-lg bg-[#2874F5] px-4 py-2.5 text-[11px] font-bold text-white shadow-[0_4px_12px_rgba(40,116,245,0.20)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#1761DC] hover:shadow-lg active:scale-95"
+          >
+            <Plus size={15} />
+            Add School
+          </button>
+
+          <button
+            type="button"
+            onClick={() => navigate("/super-admin/enquiries")}
+            className="inline-flex items-center gap-2 rounded-lg border border-[#E1EAF7] bg-white px-3.5 py-2.5 text-[11px] font-bold text-[#2874F5] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#BFD5F5] hover:bg-[#F2F7FF] active:scale-95"
+          >
+            <MessageSquare size={14} />
+            View Enquiries
+          </button>
+
+          <button
+            type="button"
+            onClick={() => navigate("/super-admin/subscriptions")}
+            className="inline-flex items-center gap-2 rounded-lg border border-[#E1EAF7] bg-white px-3.5 py-2.5 text-[11px] font-bold text-[#2874F5] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#BFD5F5] hover:bg-[#F2F7FF] active:scale-95"
+          >
+            <CalendarDays size={14} />
+            View Renewals
+          </button>
+
+          <button
+            type="button"
+            onClick={fetchDashboard}
+            disabled={loading}
+            title="Refresh dashboard"
+            className="flex h-[37px] w-[37px] items-center justify-center rounded-lg border border-[#E1EAF7] bg-white text-[#64748B] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#F2F7FF] active:scale-95 disabled:opacity-50"
+          >
+            <RefreshCw
+              size={15}
+              className={loading ? "animate-spin" : ""}
+            />
+          </button>
+        </div>
+      </div>
+
+      {/* API ERROR */}
+
+      {error && (
+        <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-[11px] text-red-600">
+          <div className="flex items-center gap-2">
+            <AlertCircle size={16} />
+            {error}
+          </div>
+
+          <button
+            type="button"
+            onClick={fetchDashboard}
+            className="shrink-0 font-bold underline"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      {/* STATISTICS */}
+
+      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+        {cards.map((card, index) => (
+          <StatCard
+            key={card.title}
+            {...card}
+            index={index}
+            loading={loading}
+          />
+        ))}
+      </div>
+
+      {/* CHARTS */}
+
+      <div className="mb-4 grid grid-cols-1 gap-4 xl:grid-cols-[1.65fr_1fr]">
+        <RevenueChart
+          revenueTrend={dashboardData?.revenueTrend}
+          selectedPeriod={selectedPeriod}
+          onPeriodChange={setSelectedPeriod}
+        />
+
+        <SchoolStatusChart statistics={statistics} />
+      </div>
+
+      {/* ACTIVITY PANELS */}
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <RenewalsPanel
+          items={renewals}
+          onViewAll={() => navigate("/super-admin/subscriptions")}
+        />
+
+        <SupportTicketsPanel
+          items={tickets}
+          onViewAll={() => navigate("/super-admin/support")}
+        />
+
+        <RecentPaymentsPanel
+          items={payments}
+          onViewAll={() => navigate("/super-admin/revenue")}
+        />
+      </div>
+
+      {/* FOOTER */}
+
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-2 border-t border-[#E5ECF7] pt-4">
+        <p className="text-[10px] font-medium text-[#9AA6B8]">
+          EduSchoolHub · Super Admin
+        </p>
+
+        <p className="text-[10px] text-[#9AA6B8]">
+          Dashboard data is connected to your platform API.
+        </p>
       </div>
     </div>
   );
